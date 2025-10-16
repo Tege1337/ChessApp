@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -66,6 +67,53 @@ router.post('/login', async (req, res) => {
         stats: user.stats,
         settings: user.settings
       }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get user profile
+router.get('/profile', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      stats: user.stats,
+      settings: user.settings
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update user settings
+router.patch('/settings', authMiddleware, async (req, res) => {
+  try {
+    const { theme, soundEffects, boardStyle } = req.body;
+    
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { $set: { 
+        'settings.theme': theme, 
+        'settings.soundEffects': soundEffects, 
+        'settings.boardStyle': boardStyle 
+      } },
+      { new: true }
+    ).select('-password');
+    
+    res.json({
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      stats: user.stats,
+      settings: user.settings
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
