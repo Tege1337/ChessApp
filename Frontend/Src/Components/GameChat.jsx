@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import { FaPaperPlane, FaSmile, FaTimes } from 'react-icons/fa';
-import './GameChat.css';
 
 const EMOJIS = ['😀', '😂', '😎', '🤔', '😢', '😡', '👍', '👎', '🔥', '💯', '🎉', '👏', '🤝', '💪', '🙏', '❤️', '⚡', '✨', '🎯', '♟️', '👑', '🏆'];
 
