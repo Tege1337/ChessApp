@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from './Context/AuthContext';
+import { useAuth } from '../Context/AuthContext';
 import axios from 'axios';
 import { FaUserFriends, FaUserPlus, FaUserMinus, FaTimes, FaCheck, FaSearch } from 'react-icons/fa';
 
