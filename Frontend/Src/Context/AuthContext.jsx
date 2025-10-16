@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
+      const response = await axios.post(`${API_URL}/api/auth/login`, { email, password });
       const { token, user } = response.data;
       
       if (!token || !user) {
@@ -88,10 +88,10 @@ export const AuthProvider = ({ children }) => {
       console.error('Login failed:', error);
       if (error.response?.status === 401) {
         throw new Error('Invalid email or password');
-      } else if (!error.response) {
-        throw new Error('Unable to connect to server');
+      } else if (!error.response || error.code === 'ECONNREFUSED') {
+        throw new Error('Unable to connect to server. Please check if the server is running.');
       } else {
-        throw new Error('An error occurred during login');
+        throw new Error(error.response?.data?.error || 'An error occurred during login');
       }
     }
   };
