@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../../src/Context/AuthContext';
+import { useAuth } from '../Context/AuthContext';
 import axios from 'axios';
 import { FaTrophy, FaChessBoard } from 'react-icons/fa';
 
