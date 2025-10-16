@@ -3,7 +3,8 @@ import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import io from 'socket.io-client';
 import { useAuth } from '../Context/AuthContext';
-import { FaSearch, FaTrophy, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaTimes } from 'react-icons/fa';
+import GameChat from './GameChat';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -83,7 +84,6 @@ function GameBoard() {
       // Check if it's now our turn and we have a premove
       const myColor = playerColor === 'white' ? 'w' : 'b';
       if (newGame.turn() === myColor && premove) {
-        // Execute premove after a tiny delay
         setTimeout(() => {
           const testGame = new Chess(newGame.fen());
           try {
@@ -175,21 +175,17 @@ function GameBoard() {
     const piece = gameCopy.get(square);
     const myColor = playerColor === 'white' ? 'w' : 'b';
 
-    // If it's NOT my turn, handle premoves
     if (!isMyTurn()) {
       if (selectedSquare) {
-        // Make premove
         setPremove({ from: selectedSquare, to: square });
         setSelectedSquare(null);
         setLegalMoves([]);
         console.log('⏱️ Premove set:', selectedSquare, '->', square);
       } else if (piece && piece.color === myColor) {
-        // Select piece for premove
         setSelectedSquare(square);
         const moves = gameCopy.moves({ square, verbose: true });
         setLegalMoves(moves.map(m => m.to));
       } else {
-        // Clicked empty square - clear selection
         setSelectedSquare(null);
         setLegalMoves([]);
         setPremove(null);
@@ -197,7 +193,6 @@ function GameBoard() {
       return;
     }
 
-    // It IS my turn - make normal move
     if (selectedSquare) {
       const move = gameCopy.move({
         from: selectedSquare,
@@ -215,17 +210,14 @@ function GameBoard() {
         setLegalMoves([]);
         setPremove(null);
       } else if (piece && piece.color === myColor) {
-        // Clicking another own piece - select it
         setSelectedSquare(square);
         const moves = gameCopy.moves({ square, verbose: true });
         setLegalMoves(moves.map(m => m.to));
       } else {
-        // Invalid move - deselect
         setSelectedSquare(null);
         setLegalMoves([]);
       }
     } else if (piece && piece.color === myColor) {
-      // Select piece
       setSelectedSquare(square);
       const moves = gameCopy.moves({ square, verbose: true });
       setLegalMoves(moves.map(m => m.to));
@@ -237,7 +229,6 @@ function GameBoard() {
     
     const gameCopy = new Chess(game.fen());
     
-    // If not our turn, set as premove
     if (!isMyTurn()) {
       setPremove({ from: sourceSquare, to: targetSquare });
       console.log('⏱️ Premove set via drag:', sourceSquare, '->', targetSquare);
@@ -379,6 +370,16 @@ function GameBoard() {
           customLightSquareStyle={{ backgroundColor: currentBoardStyle.light }}
         />
       </div>
+
+      {/* Chat Component */}
+      {gameId && opponent && (
+        <GameChat 
+          socket={socket}
+          gameId={gameId}
+          playerUsername={user?.username}
+          opponentUsername={opponent?.username}
+        />
+      )}
     </div>
   );
 }
