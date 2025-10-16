@@ -1,11 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import Navbar from './components/Navbar';
-import Login from './components/Login';
-import Register from './components/Register';
-import GameBoard from './components/GameBoard';
-import Profile from './components/Profile';
-import Settings from './components/Settings';
+import { AuthProvider, useAuth } from './Context/AuthContext';
+import Navbar from './Components/navbar';
+import Login from './Components/login';
+import Register from './Components/register';
+import GameBoard from './Components/gameboard';
+import Profile from './Components/profile';
+import Settings from './Components/settings';
 import './App.css';
 
 function PrivateRoute({ children }) {
