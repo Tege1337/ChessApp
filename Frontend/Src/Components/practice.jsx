@@ -29,7 +29,15 @@ function Practice() {
   const boardStyles = {
     classic: { light: '#d1d5db', dark: '#4b5563' },
     modern: { light: '#e0e7ff', dark: '#4f46e5' },
-    wood: { light: '#f0d9b5', dark: '#b58863' }
+    wood: { light: '#f0d9b5', dark: '#b58863' },
+    emerald: { light: '#dcfce7', dark: '#059669' },
+    coral: { light: '#ffedd5', dark: '#ea580c' },
+    midnight: { light: '#1e293b', dark: '#0f172a' },
+    ruby: { light: '#fecdd3', dark: '#be123c' },
+    ocean: { light: '#e0f2fe', dark: '#0369a1' },
+    forest: { light: '#d1fae5', dark: '#047857' },
+    autumn: { light: '#fef3c7', dark: '#b45309' },
+    sunset: { light: '#fce7f3', dark: '#be185d' }
   };
 
   // Bot makes a move
@@ -92,15 +100,104 @@ function Practice() {
     let bestMove = moves[0];
     let bestScore = -Infinity;
 
+    const evaluatePosition = (game, move, depth = 1) => {
+      let score = Math.random() * 0.2; // Small random factor
+
+      // Material value
+      if (move.captured) {
+        score += pieceValues[move.captured] * 10;
+      }
+
+      // Check and checkmate
+      if (game.isCheckmate()) {
+        score += 1000;
+      } else if (game.isCheck()) {
+        score += 5;
+      }
+
+      // Center control
+      const centerSquares = ['d4', 'd5', 'e4', 'e5'];
+      if (centerSquares.includes(move.to)) {
+        score += 3;
+      }
+
+      // Extended center control
+      const extendedCenter = ['c3', 'c4', 'c5', 'c6', 'd3', 'd6', 'e3', 'e6', 'f3', 'f4', 'f5', 'f6'];
+      if (extendedCenter.includes(move.to)) {
+        score += 1;
+      }
+
+      // Piece development
+      if (!game.isGameOver() && depth === 1) {
+        if (move.piece === 'n' || move.piece === 'b') {
+          if (move.from.includes('1') || move.from.includes('8')) {
+            score += 2; // Encourage developing pieces
+          }
+        }
+      }
+
+      // Pawn structure
+      if (move.piece === 'p') {
+        // Avoid double pawns
+        const file = move.to[0];
+        let pawnCount = 0;
+        for (let rank = 1; rank <= 8; rank++) {
+          const square = file + rank;
+          const piece = game.get(square);
+          if (piece && piece.type === 'p' && piece.color === move.color) {
+            pawnCount++;
+          }
+        }
+        if (pawnCount > 1) score -= 1;
+
+        // Encourage pawn chains
+        const adjacentFiles = {
+          a: ['b'], b: ['a', 'c'], c: ['b', 'd'], d: ['c', 'e'],
+          e: ['d', 'f'], f: ['e', 'g'], g: ['f', 'h'], h: ['g']
+        };
+        
+        adjacentFiles[file].forEach(adjFile => {
+          const adjSquare = adjFile + (move.color === 'w' ? move.to[1] - 1 : move.to[1] + 1);
+          const adjPiece = game.get(adjSquare);
+          if (adjPiece && adjPiece.type === 'p' && adjPiece.color === move.color) {
+            score += 1;
+          }
+        });
+      }
+
+      // King safety
+      if (move.piece === 'k') {
+        if (move.flags.includes('k') || move.flags.includes('q')) {
+          score += 3; // Encourage castling
+        } else {
+          score -= 0.5; // Discourage random king moves
+        }
+      }
+
+      // Look ahead one move if not at max depth
+      if (depth < 2) {
+        const possibleResponses = game.moves({ verbose: true });
+        if (possibleResponses.length > 0) {
+          let bestResponse = -Infinity;
+          possibleResponses.slice(0, 5).forEach(response => {
+            const testGame = new Chess(game.fen());
+            testGame.move(response);
+            const responseEval = -evaluatePosition(testGame, response, depth + 1);
+            bestResponse = Math.max(bestResponse, responseEval);
+          });
+          score -= bestResponse * 0.5; // Consider opponent's best response
+        }
+      }
+
+      return score;
+    };
+
+    // Evaluate each move
     moves.forEach(move => {
-      let score = Math.random() * 0.5;
-      if (move.captured) score += pieceValues[move.captured] * 10;
       const testGame = new Chess(currentGame.fen());
       testGame.move(move);
-      if (testGame.inCheck()) score += 5;
-      const centerSquares = ['d4', 'd5', 'e4', 'e5'];
-      if (centerSquares.includes(move.to)) score += 2;
-      if (move.piece === 'n' || move.piece === 'b') score += 1;
+      const score = evaluatePosition(testGame, move);
+      
       if (score > bestScore) {
         bestScore = score;
         bestMove = move;

@@ -30,7 +30,15 @@ function GameBoard() {
   const boardStyles = {
     classic: { light: '#d1d5db', dark: '#4b5563' },
     modern: { light: '#e0e7ff', dark: '#4f46e5' },
-    wood: { light: '#f0d9b5', dark: '#b58863' }
+    wood: { light: '#f0d9b5', dark: '#b58863' },
+    emerald: { light: '#dcfce7', dark: '#059669' },
+    coral: { light: '#ffedd5', dark: '#ea580c' },
+    midnight: { light: '#1e293b', dark: '#0f172a' },
+    ruby: { light: '#fecdd3', dark: '#be123c' },
+    ocean: { light: '#e0f2fe', dark: '#0369a1' },
+    forest: { light: '#d1fae5', dark: '#047857' },
+    autumn: { light: '#fef3c7', dark: '#b45309' },
+    sunset: { light: '#fce7f3', dark: '#be185d' }
   };
 
   useEffect(() => {
