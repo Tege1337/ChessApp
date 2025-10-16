@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '/../Context/AuthContext';
+import { useAuth } from '../Context/AuthContext';
 import { FaCog, FaPalette, FaVolumeUp, FaChessBoard } from 'react-icons/fa';
 
 function Settings() {
