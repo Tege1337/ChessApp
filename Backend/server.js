@@ -9,7 +9,7 @@ const jwt = require('jsonwebtoken');
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
-const User = require('./models/User');
+const User = require('./models/user');
 const GameHistory = require('./models/GameHistory');
 
 const app = express();
