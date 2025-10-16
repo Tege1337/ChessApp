@@ -574,9 +574,9 @@ body {
 
 /* Profile Page */
 .profile-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 3rem;
 }
 
 .profile-header {
@@ -586,41 +586,46 @@ body {
   padding: 3rem;
   display: flex;
   align-items: center;
-  gap: 2rem;
-  margin-bottom: 2rem;
+  gap: 3rem;
+  margin-bottom: 3rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .profile-avatar {
-  width: 120px;
-  height: 120px;
+  width: 150px;
+  height: 150px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--accent) 0%, #0e7490 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3rem;
+  font-size: 4rem;
   font-weight: 700;
   color: white;
   box-shadow: 0 8px 24px rgba(8, 145, 178, 0.3);
+  flex-shrink: 0;
+}
+
+.profile-info {
+  flex: 1;
 }
 
 .profile-info h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  font-size: 3rem;
+  margin-bottom: 1rem;
   color: var(--text);
 }
 
 .profile-elo {
-  font-size: 1.5rem;
+  font-size: 2rem;
   color: var(--accent);
   font-weight: 600;
 }
 
 .profile-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2rem;
   margin-bottom: 2rem;
 }
 
@@ -628,57 +633,60 @@ body {
   background: var(--bg-secondary);
   border: 2px solid var(--border);
   border-radius: 12px;
-  padding: 2rem;
+  padding: 2.5rem;
   text-align: center;
   transition: all 0.3s;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .stat-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transform: translateY(-8px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  border-color: var(--accent);
 }
 
 .stat-icon {
-  font-size: 2.5rem;
+  font-size: 3rem;
   margin-bottom: 1rem;
   color: var(--accent);
 }
 
 .stat-value {
-  font-size: 2.5rem;
+  font-size: 3rem;
   font-weight: 700;
   color: var(--text);
   margin-bottom: 0.5rem;
 }
 
 .stat-label {
-  font-size: 1rem;
+  font-size: 1.1rem;
   color: var(--text-secondary);
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 /* Settings Page */
 .settings-container {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 3rem;
 }
 
 .settings-header {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  margin-bottom: 2rem;
+  gap: 1.5rem;
+  margin-bottom: 3rem;
 }
 
 .settings-icon {
-  font-size: 2.5rem;
+  font-size: 3rem;
   color: var(--accent);
 }
 
 .settings-header h1 {
-  font-size: 2.5rem;
+  font-size: 3rem;
   color: var(--text);
 }
 
@@ -686,13 +694,13 @@ body {
   background: var(--bg-secondary);
   border: 2px solid var(--border);
   border-radius: 16px;
-  padding: 2rem;
+  padding: 3rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .setting-section {
-  margin-bottom: 2rem;
-  padding-bottom: 2rem;
+  margin-bottom: 3rem;
+  padding-bottom: 3rem;
   border-bottom: 2px solid var(--border);
 }
 
@@ -705,34 +713,34 @@ body {
 .setting-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  gap: 1rem;
+  margin-bottom: 2rem;
 }
 
 .section-icon {
-  font-size: 1.5rem;
+  font-size: 2rem;
   color: var(--accent);
 }
 
 .setting-header h2 {
-  font-size: 1.5rem;
+  font-size: 2rem;
   color: var(--text);
 }
 
 .setting-options {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .radio-option {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 1rem;
+  gap: 1rem;
+  padding: 1.5rem;
   background: var(--bg-tertiary);
   border: 2px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s;
 }
@@ -740,17 +748,19 @@ body {
 .radio-option:hover {
   border-color: var(--accent);
   background: var(--bg-primary);
+  transform: translateX(8px);
 }
 
 .radio-option input[type="radio"] {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   cursor: pointer;
   accent-color: var(--accent);
+  flex-shrink: 0;
 }
 
 .radio-option span {
-  font-size: 1rem;
+  font-size: 1.2rem;
   color: var(--text);
   font-weight: 500;
 }
@@ -758,22 +768,23 @@ body {
 .toggle-option {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem;
+  gap: 1.5rem;
+  padding: 1.5rem;
   background: var(--bg-tertiary);
   border: 2px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
 }
 
 .toggle-option input[type="checkbox"] {
-  width: 50px;
-  height: 26px;
+  width: 60px;
+  height: 32px;
   position: relative;
   appearance: none;
   background: var(--border);
   border-radius: 50px;
   cursor: pointer;
   transition: all 0.3s;
+  flex-shrink: 0;
 }
 
 .toggle-option input[type="checkbox"]:checked {
@@ -783,33 +794,34 @@ body {
 .toggle-option input[type="checkbox"]::before {
   content: '';
   position: absolute;
-  width: 20px;
-  height: 20px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: white;
   top: 3px;
   left: 3px;
   transition: all 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .toggle-option input[type="checkbox"]:checked::before {
-  transform: translateX(24px);
+  transform: translateX(28px);
 }
 
 .toggle-label {
-  font-size: 1rem;
+  font-size: 1.2rem;
   color: var(--text);
   font-weight: 500;
 }
 
 .save-button {
   width: 100%;
-  padding: 1rem;
+  padding: 1.5rem;
   background: var(--accent);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 12px;
+  font-size: 1.2rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s;
@@ -818,8 +830,8 @@ body {
 
 .save-button:hover:not(:disabled) {
   background: var(--accent-hover);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(8, 145, 178, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(8, 145, 178, 0.3);
 }
 
 .save-button:disabled {
@@ -1732,39 +1744,100 @@ body {
   cursor: not-allowed;
 }
 
-/* Mobile Responsive */
+/* Mobile Responsive for Profile and Settings */
+@media (max-width: 1200px) {
+  .profile-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
-  .game-container {
+  .profile-container,
+  .settings-container {
+    padding: 1.5rem;
+  }
+
+  .profile-header {
     flex-direction: column;
+    text-align: center;
+    padding: 2rem;
     gap: 1.5rem;
   }
 
-  .game-sidebar {
-    width: 100%;
-    order: -1;
+  .profile-avatar {
+    width: 120px;
+    height: 120px;
+    font-size: 3rem;
   }
 
-  .practice-game {
-    flex-direction: column;
+  .profile-info h1 {
+    font-size: 2rem;
   }
 
-  .practice-sidebar {
-    width: 100%;
+  .profile-elo {
+    font-size: 1.5rem;
   }
 
-  .mode-cards {
+  .profile-stats {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
-  .game-chat {
-    width: calc(100% - 40px);
-    height: 400px;
-    bottom: 10px;
-    right: 20px;
+  .stat-card {
+    padding: 1.5rem;
   }
 
-  .emoji-grid {
-    grid-template-columns: repeat(6, 1fr);
+  .stat-icon {
+    font-size: 2rem;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+  }
+
+  .settings-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .settings-header h1 {
+    font-size: 2rem;
+  }
+
+  .settings-icon {
+    font-size: 2rem;
+  }
+
+  .settings-content {
+    padding: 1.5rem;
+  }
+
+  .setting-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .section-icon {
+    font-size: 1.5rem;
+  }
+
+  .radio-option,
+  .toggle-option {
+    padding: 1rem;
+  }
+
+  .radio-option span,
+  .toggle-label {
+    font-size: 1rem;
+  }
+
+  .save-button {
+    padding: 1rem;
+    font-size: 1rem;
   }
 }
 
