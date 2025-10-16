@@ -1,5 +1,6 @@
 /* Root Variables */
 :root {
+  /* Theme colors */
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --bg-tertiary: #334155;
@@ -11,6 +12,49 @@
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
+
+  /* Animation speeds */
+  --speed-fast: 150ms;
+  --speed-normal: 300ms;
+  --speed-slow: 500ms;
+
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.1);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+  --shadow-xl: 0 20px 25px rgba(0,0,0,0.1);
+
+  /* Z-index layers */
+  --z-base: 1;
+  --z-overlay: 10;
+  --z-modal: 20;
+  --z-popup: 30;
+  --z-tooltip: 40;
+
+  /* Font sizes */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+
+  /* Performance optimizations */
+  scroll-behavior: smooth;
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Better touch handling */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Light Theme */
@@ -33,6 +77,75 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+/* Error Boundary */
+.error-boundary {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  background: var(--bg-primary);
+}
+
+.error-content {
+  background: var(--bg-secondary);
+  padding: var(--space-xl);
+  border-radius: 16px;
+  text-align: center;
+  max-width: 600px;
+  width: 90%;
+  border: 2px solid var(--border);
+  box-shadow: var(--shadow-xl);
+}
+
+.error-content h1 {
+  font-size: var(--text-2xl);
+  color: var(--text);
+  margin-bottom: var(--space-lg);
+}
+
+.error-content p {
+  color: var(--text-secondary);
+  margin-bottom: var(--space-lg);
+}
+
+.retry-button {
+  background: var(--accent);
+  color: white;
+  border: none;
+  padding: var(--space-md) var(--space-xl);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--speed-fast);
+}
+
+.retry-button:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+}
+
+.error-details {
+  margin-top: var(--space-lg);
+  text-align: left;
+}
+
+.error-details summary {
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--space-sm);
+}
+
+.error-details pre {
+  background: var(--bg-tertiary);
+  padding: var(--space-md);
+  border-radius: 8px;
+  margin-top: var(--space-sm);
+  overflow-x: auto;
+  color: var(--text);
+  font-size: var(--text-sm);
 }
 
 body {
@@ -350,17 +463,39 @@ body {
   text-decoration: underline;
 }
 
+/* Improved Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
 .auth-button {
   width: 100%;
-  padding: 1rem;
+  padding: var(--space-md);
   background: var(--accent);
   color: white;
   border: none;
   border-radius: 12px;
-  font-size: 1rem;
+  font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all var(--speed-normal);
+  animation: scaleIn var(--speed-normal) ease;
   position: relative;
   overflow: hidden;
 }

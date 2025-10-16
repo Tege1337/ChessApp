@@ -230,7 +230,7 @@ io.on('connection', (socket) => {
         games.delete(gameId);
         console.log('Game cleaned up:', gameId);
       }
-    });
+    }
   });
 });
 
