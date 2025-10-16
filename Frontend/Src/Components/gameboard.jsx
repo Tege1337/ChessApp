@@ -24,7 +24,6 @@ function GameBoard() {
 
   const boardStyle = user?.settings?.boardStyle || 'classic';
 
-  // Board color schemes
   const boardStyles = {
     classic: {
       light: '#d1d5db',
@@ -40,7 +39,6 @@ function GameBoard() {
     }
   };
 
-  // Animated dots for waiting state
   useEffect(() => {
     if (isWaiting) {
       const interval = setInterval(() => {
@@ -86,27 +84,34 @@ function GameBoard() {
 
     newSocket.on('moveMade', ({ fen, isCheck, isCheckmate, isGameOver }) => {
       const newGame = new Chess(fen);
-      setGame(newGame);
+      
+      // Execute premove if it's our turn now and we have a premove set
+      if (premove && newGame.turn() === (playerColor === 'white' ? 'w' : 'b')) {
+        setTimeout(() => {
+          const testGame = new Chess(newGame.fen());
+          const move = testGame.move({
+            from: premove.from,
+            to: premove.to,
+            promotion: 'q'
+          });
+          
+          if (move && socket) {
+            setGame(testGame);
+            socket.emit('makeMove', {
+              gameId,
+              move: { from: premove.from, to: premove.to, promotion: 'q' }
+            });
+          }
+          setPremove(null);
+          setSelectedSquare(null);
+          setLegalMoves([]);
+        }, 100);
+      } else {
+        setGame(newGame);
+      }
+      
       setSelectedSquare(null);
       setLegalMoves([]);
-      
-      // Execute premove if it's our turn now
-      if (premove && newGame.turn() === (playerColor === 'white' ? 'w' : 'b')) {
-        const move = newGame.move({
-          from: premove.from,
-          to: premove.to,
-          promotion: 'q'
-        });
-        
-        if (move) {
-          setGame(newGame);
-          socket.emit('makeMove', {
-            gameId,
-            move: { from: premove.from, to: premove.to, promotion: 'q' }
-          });
-        }
-        setPremove(null);
-      }
       
       if (isCheckmate) {
         const winner = newGame.turn() === 'w' ? 'Black' : 'White';
@@ -172,11 +177,29 @@ function GameBoard() {
   };
 
   const onSquareClick = (square) => {
-    if (!gameId || !playerColor || !socket) return;
+    if (!gameId || !playerColor) return;
 
     const gameCopy = new Chess(game.fen());
-    
-    // If clicking on empty square or opponent piece while piece is selected, try to move
+    const piece = gameCopy.get(square);
+    const myColor = playerColor === 'white' ? 'w' : 'b';
+
+    // If it's not my turn, handle premoves
+    if (!isMyTurn()) {
+      if (selectedSquare) {
+        // Set premove
+        setPremove({ from: selectedSquare, to: square });
+        setSelectedSquare(null);
+        setLegalMoves([]);
+      } else if (piece && piece.color === myColor) {
+        // Select piece for premove
+        setSelectedSquare(square);
+        const moves = gameCopy.moves({ square, verbose: true });
+        setLegalMoves(moves.map(m => m.to));
+      }
+      return;
+    }
+
+    // Normal move (it's my turn)
     if (selectedSquare) {
       const move = gameCopy.move({
         from: selectedSquare,
@@ -184,8 +207,7 @@ function GameBoard() {
         promotion: 'q'
       });
 
-      if (move && isMyTurn()) {
-        // Valid move
+      if (move && socket) {
         setGame(gameCopy);
         socket.emit('makeMove', {
           gameId,
@@ -194,44 +216,32 @@ function GameBoard() {
         setSelectedSquare(null);
         setLegalMoves([]);
         setPremove(null);
-      } else {
-        // Invalid move or not our turn - check if clicking on own piece
-        const piece = gameCopy.get(square);
-        const turn = gameCopy.turn();
-        
-        if (piece && ((turn === 'w' && piece.color === 'w') || (turn === 'b' && piece.color === 'b'))) {
-          // Clicking on another own piece - select it
-          setSelectedSquare(square);
-          const moves = gameCopy.moves({ square, verbose: true });
-          setLegalMoves(moves.map(m => m.to));
-        } else {
-          // Clicking elsewhere - deselect
-          setSelectedSquare(null);
-          setLegalMoves([]);
-        }
-      }
-    } else {
-      // No piece selected - select piece if it's ours
-      const piece = gameCopy.get(square);
-      const turn = gameCopy.turn();
-      
-      if (isMyTurn() && piece && ((turn === 'w' && piece.color === 'w') || (turn === 'b' && piece.color === 'b'))) {
+      } else if (piece && piece.color === myColor) {
+        // Clicking on another own piece - select it
         setSelectedSquare(square);
         const moves = gameCopy.moves({ square, verbose: true });
         setLegalMoves(moves.map(m => m.to));
+      } else {
+        // Invalid move - deselect
+        setSelectedSquare(null);
+        setLegalMoves([]);
       }
+    } else if (piece && piece.color === myColor) {
+      // Select piece
+      setSelectedSquare(square);
+      const moves = gameCopy.moves({ square, verbose: true });
+      setLegalMoves(moves.map(m => m.to));
     }
   };
 
   const onDrop = (sourceSquare, targetSquare) => {
-    if (!gameId || !playerColor || !socket) return false;
+    if (!gameId || !playerColor) return false;
     
     const gameCopy = new Chess(game.fen());
     
     // If not our turn, set as premove
     if (!isMyTurn()) {
       setPremove({ from: sourceSquare, to: targetSquare });
-      setStatus('Premove set! ⏱️');
       return false;
     }
 
@@ -242,7 +252,7 @@ function GameBoard() {
         promotion: 'q'
       });
 
-      if (move) {
+      if (move && socket) {
         setGame(gameCopy);
         socket.emit('makeMove', {
           gameId,
@@ -278,7 +288,6 @@ function GameBoard() {
 
   return (
     <div className="game-container">
-      {/* Game Over Popup */}
       {gameOverMessage && (
         <div className="game-over-overlay">
           <div className={`game-over-popup ${gameOverMessage.type}`}>
@@ -295,7 +304,6 @@ function GameBoard() {
       )}
 
       <div className="game-sidebar">
-        {/* Opponent Info */}
         {opponent && (
           <div className="player-card opponent-card">
             <div className="player-avatar opponent-avatar">
@@ -309,14 +317,12 @@ function GameBoard() {
           </div>
         )}
 
-        {/* Status Card */}
         <div className="status-card">
           <div className="status-text">{status}</div>
           {isWaiting && <div className="searching-dots">{dots}</div>}
-          {premove && <div className="premove-indicator">Premove ready</div>}
+          {premove && <div className="premove-indicator">⏱️ Premove set</div>}
         </div>
 
-        {/* Matchmaking Queue */}
         {isWaiting && (
           <div className="queue-card">
             <div className="queue-animation">
@@ -331,7 +337,6 @@ function GameBoard() {
           </div>
         )}
 
-        {/* Find Game Button */}
         {!gameId && !isWaiting && (
           <button onClick={findGame} className="find-game-btn">
             <FaSearch />
@@ -339,7 +344,6 @@ function GameBoard() {
           </button>
         )}
 
-        {/* Current Player Info */}
         {user && (
           <div className="player-card current-player-card">
             <div className="player-avatar current-avatar">
@@ -354,7 +358,6 @@ function GameBoard() {
         )}
       </div>
 
-      {/* Chess Board */}
       <div className="board-container">
         <Chessboard 
           position={game.fen()} 

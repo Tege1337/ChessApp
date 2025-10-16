@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './Context/AuthContext';
+import { Analytics } from "@vercel/analytics/next";
 import Navbar from './Components/navbar';
 import Login from './Components/login';
 import Register from './Components/register';
