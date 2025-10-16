@@ -3,7 +3,7 @@ import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import io from 'socket.io-client';
 import { useAuth } from '../Context/AuthContext';
-import { FaSearch, FaTrophy, FaChessPawn } from 'react-icons/fa';
+import { FaSearch, FaTrophy, FaChessPawn, FaTimes } from 'react-icons/fa';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -17,6 +17,10 @@ function GameBoard() {
   const [status, setStatus] = useState('Ready to play!');
   const [isWaiting, setIsWaiting] = useState(false);
   const [dots, setDots] = useState('');
+  const [selectedSquare, setSelectedSquare] = useState(null);
+  const [legalMoves, setLegalMoves] = useState([]);
+  const [gameOverMessage, setGameOverMessage] = useState(null);
+  const [premove, setPremove] = useState(null);
 
   // Animated dots for waiting state
   useEffect(() => {
@@ -58,16 +62,51 @@ function GameBoard() {
       const newGame = new Chess(fen);
       setGame(newGame);
       setStatus(`Game started! You are ${color}`);
+      setGameOverMessage(null);
+      setPremove(null);
     });
 
     newSocket.on('moveMade', ({ fen, isCheck, isCheckmate, isGameOver }) => {
       const newGame = new Chess(fen);
       setGame(newGame);
+      setSelectedSquare(null);
+      setLegalMoves([]);
+      
+      // Execute premove if it's our turn now
+      if (premove && newGame.turn() === (playerColor === 'white' ? 'w' : 'b')) {
+        const move = newGame.move({
+          from: premove.from,
+          to: premove.to,
+          promotion: 'q'
+        });
+        
+        if (move) {
+          setGame(newGame);
+          socket.emit('makeMove', {
+            gameId,
+            move: { from: premove.from, to: premove.to, promotion: 'q' }
+          });
+        }
+        setPremove(null);
+      }
       
       if (isCheckmate) {
-        setStatus(`Checkmate! ${newGame.turn() === 'w' ? 'Black' : 'White'} wins!`);
+        const winner = newGame.turn() === 'w' ? 'Black' : 'White';
+        setStatus(`Checkmate! ${winner} wins!`);
+        setGameOverMessage({
+          title: 'Checkmate!',
+          message: `${winner} wins!`,
+          type: winner.toLowerCase() === playerColor ? 'win' : 'loss'
+        });
+        setPremove(null);
       } else if (isGameOver) {
         setStatus('Game Over - Draw');
+        setGameOverMessage({
+          title: 'Draw',
+          message: 'Game ended in a draw',
+          type: 'draw'
+        });
+        setPremove(null);
       } else if (isCheck) {
         setStatus('Check! ⚠️');
       } else {
@@ -77,14 +116,22 @@ function GameBoard() {
 
     newSocket.on('opponentDisconnected', () => {
       setStatus('Opponent disconnected. You win! 🎉');
-      setGameId(null);
-      setOpponent(null);
-      setPlayerColor(null);
-      setIsWaiting(false);
+      setGameOverMessage({
+        title: 'Victory!',
+        message: 'Opponent disconnected',
+        type: 'win'
+      });
+      setPremove(null);
+      setTimeout(() => {
+        setGameId(null);
+        setOpponent(null);
+        setPlayerColor(null);
+        setGameOverMessage(null);
+      }, 3000);
     });
 
     return () => newSocket.close();
-  }, [token]);
+  }, [token, premove, gameId, playerColor, socket]);
 
   const findGame = () => {
     if (socket && socket.connected) {
@@ -99,16 +146,100 @@ function GameBoard() {
   const cancelSearch = () => {
     setIsWaiting(false);
     setStatus('Search cancelled');
-    // You could emit a 'cancelSearch' event to the server here
+  };
+
+  const isMyTurn = () => {
+    const turn = game.turn();
+    return (turn === 'w' && playerColor === 'white') || (turn === 'b' && playerColor === 'black');
+  };
+
+  const onSquareClick = (square) => {
+    if (!gameId || !playerColor || !socket) return;
+
+    const gameCopy = new Chess(game.fen());
+    
+    // If it's not our turn, set premove
+    if (!isMyTurn()) {
+      if (selectedSquare) {
+        // Check if this would be a valid move when it's our turn
+        const testGame = new Chess(game.fen());
+        // Simulate opponent's move by flipping turn (not perfect but works for premove UI)
+        const pieceOnSelected = testGame.get(selectedSquare);
+        const myColor = playerColor === 'white' ? 'w' : 'b';
+        
+        if (pieceOnSelected && pieceOnSelected.color === myColor) {
+          setPremove({ from: selectedSquare, to: square });
+          setSelectedSquare(null);
+          setLegalMoves([]);
+          setStatus('Premove set! ⏱️');
+        } else {
+          setSelectedSquare(null);
+          setLegalMoves([]);
+          setPremove(null);
+        }
+      } else {
+        // Select piece for premove
+        const piece = gameCopy.get(square);
+        const myColor = playerColor === 'white' ? 'w' : 'b';
+        if (piece && piece.color === myColor) {
+          setSelectedSquare(square);
+          // Show potential moves (they might not be legal yet)
+          const moves = gameCopy.moves({ square, verbose: true });
+          setLegalMoves(moves.map(m => m.to));
+        }
+      }
+      return;
+    }
+
+    // Normal move logic when it's our turn
+    if (selectedSquare) {
+      const move = gameCopy.move({
+        from: selectedSquare,
+        to: square,
+        promotion: 'q'
+      });
+
+      if (move) {
+        setGame(gameCopy);
+        socket.emit('makeMove', {
+          gameId,
+          move: { from: selectedSquare, to: square, promotion: 'q' }
+        });
+        setSelectedSquare(null);
+        setLegalMoves([]);
+        setPremove(null);
+      } else {
+        const piece = gameCopy.get(square);
+        const turn = gameCopy.turn();
+        if (piece && ((turn === 'w' && piece.color === 'w') || (turn === 'b' && piece.color === 'b'))) {
+          setSelectedSquare(square);
+          const moves = gameCopy.moves({ square, verbose: true });
+          setLegalMoves(moves.map(m => m.to));
+        } else {
+          setSelectedSquare(null);
+          setLegalMoves([]);
+        }
+      }
+    } else {
+      const piece = gameCopy.get(square);
+      const turn = gameCopy.turn();
+      if (piece && ((turn === 'w' && piece.color === 'w') || (turn === 'b' && piece.color === 'b'))) {
+        setSelectedSquare(square);
+        const moves = gameCopy.moves({ square, verbose: true });
+        setLegalMoves(moves.map(m => m.to));
+      }
+    }
   };
 
   const onDrop = (sourceSquare, targetSquare) => {
     if (!gameId || !playerColor || !socket) return false;
     
     const gameCopy = new Chess(game.fen());
-    const turn = gameCopy.turn();
     
-    if ((turn === 'w' && playerColor !== 'white') || (turn === 'b' && playerColor !== 'black')) {
+    // If not our turn, set as premove
+    if (!isMyTurn()) {
+      setPremove({ from: sourceSquare, to: targetSquare });
+      setStatus('Premove set! ⏱️');
       return false;
     }
 
@@ -125,6 +256,9 @@ function GameBoard() {
           gameId,
           move: { from: sourceSquare, to: targetSquare, promotion: 'q' }
         });
+        setSelectedSquare(null);
+        setLegalMoves([]);
+        setPremove(null);
         return true;
       }
     } catch (error) {
@@ -133,36 +267,60 @@ function GameBoard() {
     return false;
   };
 
+  const customSquareStyles = {};
+  if (selectedSquare) {
+    customSquareStyles[selectedSquare] = { backgroundColor: 'rgba(255, 255, 0, 0.4)' };
+  }
+  if (premove) {
+    customSquareStyles[premove.from] = { backgroundColor: 'rgba(239, 68, 68, 0.4)' };
+    customSquareStyles[premove.to] = { backgroundColor: 'rgba(239, 68, 68, 0.6)' };
+  }
+  legalMoves.forEach(square => {
+    customSquareStyles[square] = { 
+      background: 'radial-gradient(circle, rgba(20, 184, 166, 0.5) 25%, transparent 25%)',
+      borderRadius: '50%'
+    };
+  });
+
   return (
     <div className="game-container">
-      <div className="game-sidebar">
-        {/* Status Card */}
-        <div className="status-card">
-          <div className="status-icon">
-            {isWaiting ? <FaSearch className="pulse" /> : <FaChessPawn />}
+      {/* Game Over Popup */}
+      {gameOverMessage && (
+        <div className="game-over-overlay">
+          <div className={`game-over-popup ${gameOverMessage.type}`}>
+            <button className="close-popup" onClick={() => setGameOverMessage(null)}>
+              <FaTimes />
+            </button>
+            <h2>{gameOverMessage.title}</h2>
+            <p>{gameOverMessage.message}</p>
+            <div className="popup-icon">
+              {gameOverMessage.type === 'win' ? '👑' : gameOverMessage.type === 'loss' ? '😔' : '🤝'}
+            </div>
           </div>
-          <div className="status-text">{status}</div>
-          {isWaiting && <div className="searching-dots">{dots}</div>}
         </div>
+      )}
 
+      <div className="game-sidebar">
         {/* Opponent Info */}
         {opponent && (
           <div className="player-card opponent-card">
-            <div className="player-card-header">
-              <span className="player-label">Opponent</span>
-              <FaTrophy className="trophy-small" />
+            <div className="player-avatar opponent-avatar">
+              {opponent.username[0].toUpperCase()}
             </div>
-            <div className="player-card-content">
-              <div className="player-avatar opponent-avatar">
-                {opponent.username[0].toUpperCase()}
-              </div>
-              <div className="player-details">
-                <div className="player-username">{opponent.username}</div>
-                <div className="player-elo-badge">{opponent.elo} ELO</div>
-              </div>
+            <div className="player-details">
+              <div className="player-label">OPPONENT</div>
+              <div className="player-username">{opponent.username}</div>
+              <div className="player-elo-badge">{opponent.elo} ELO</div>
             </div>
           </div>
         )}
+
+        {/* Status Card */}
+        <div className="status-card">
+          <div className="status-text">{status}</div>
+          {isWaiting && <div className="searching-dots">{dots}</div>}
+          {premove && <div className="premove-indicator">Premove ready</div>}
+        </div>
 
         {/* Matchmaking Queue */}
         {isWaiting && (
@@ -172,10 +330,9 @@ function GameBoard() {
               <div className="queue-circle"></div>
               <div className="queue-circle"></div>
             </div>
-            <h3>Finding opponent{dots}</h3>
-            <p>Looking for a player with similar ELO</p>
+            <p>Finding opponent{dots}</p>
             <button onClick={cancelSearch} className="cancel-button">
-              Cancel Search
+              Cancel
             </button>
           </div>
         )}
@@ -191,18 +348,13 @@ function GameBoard() {
         {/* Current Player Info */}
         {user && (
           <div className="player-card current-player-card">
-            <div className="player-card-header">
-              <span className="player-label">You</span>
-              {gameId && <span className="color-badge">{playerColor}</span>}
+            <div className="player-avatar current-avatar">
+              {user.username[0].toUpperCase()}
             </div>
-            <div className="player-card-content">
-              <div className="player-avatar current-avatar">
-                {user.username[0].toUpperCase()}
-              </div>
-              <div className="player-details">
-                <div className="player-username">{user.username}</div>
-                <div className="player-elo-badge">{user.stats.elo} ELO</div>
-              </div>
+            <div className="player-details">
+              <div className="player-label">YOU {gameId && `(${playerColor})`}</div>
+              <div className="player-username">{user.username}</div>
+              <div className="player-elo-badge">{user.stats.elo} ELO</div>
             </div>
           </div>
         )}
@@ -213,13 +365,16 @@ function GameBoard() {
         <Chessboard 
           position={game.fen()} 
           onPieceDrop={onDrop}
+          onSquareClick={onSquareClick}
           boardOrientation={playerColor || 'white'}
+          boardWidth={500}
+          customSquareStyles={customSquareStyles}
           customBoardStyle={{
-            borderRadius: '12px',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
+            borderRadius: '8px',
+            boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
           }}
-          customDarkSquareStyle={{ backgroundColor: '#7c3aed' }}
-          customLightSquareStyle={{ backgroundColor: '#e9d5ff' }}
+          customDarkSquareStyle={{ backgroundColor: '#4b5563' }}
+          customLightSquareStyle={{ backgroundColor: '#d1d5db' }}
         />
       </div>
     </div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../Context/AuthContext';
 import axios from 'axios';
-import { FaTrophy, FaChessBoard } from 'react-icons/fa';
+import { FaTrophy, FaChessBoard, FaFire, FaPercent } from 'react-icons/fa';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -28,65 +28,67 @@ function Profile() {
   };
 
   const totalGames = user?.stats?.wins + user?.stats?.losses + user?.stats?.draws;
-  const winRate = totalGames > 0 ? ((user?.stats?.wins / totalGames) * 100).toFixed(1) : 0;
+  const winRate = totalGames > 0 ? ((user?.stats?.wins / totalGames) * 100).toFixed(0) : 0;
 
   return (
     <div className="profile-container">
+      {/* Profile Header */}
       <div className="profile-header">
         <div className="profile-avatar-large">{user?.username?.[0]?.toUpperCase()}</div>
         <h1>{user?.username}</h1>
         <div className="profile-elo">
-          <FaTrophy className="trophy-icon" />
-          ELO Rating: {user?.stats?.elo}
+          <FaTrophy /> {user?.stats?.elo} ELO
         </div>
       </div>
 
+      {/* Stats Grid */}
       <div className="stats-grid">
-        <div className="stat-card">
+        <div className="stat-card-modern wins">
+          <div className="stat-icon"><FaTrophy /></div>
           <div className="stat-value">{user?.stats?.wins}</div>
           <div className="stat-label">Wins</div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card-modern losses">
+          <div className="stat-icon"><FaFire /></div>
           <div className="stat-value">{user?.stats?.losses}</div>
           <div className="stat-label">Losses</div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card-modern draws">
+          <div className="stat-icon"><FaChessBoard /></div>
           <div className="stat-value">{user?.stats?.draws}</div>
           <div className="stat-label">Draws</div>
         </div>
-        <div className="stat-card">
+        <div className="stat-card-modern winrate">
+          <div className="stat-icon"><FaPercent /></div>
           <div className="stat-value">{winRate}%</div>
           <div className="stat-label">Win Rate</div>
         </div>
       </div>
 
-      <div className="game-history">
-        <h2>
-          <FaChessBoard /> Recent Games
-        </h2>
+      {/* Game History */}
+      <div className="game-history-modern">
+        <h2>Recent Games</h2>
         
         {loading ? (
-          <div className="loading">Loading game history...</div>
+          <div className="loading">Loading...</div>
         ) : gameHistory.length === 0 ? (
-          <div className="no-games">No games played yet. Start your first game!</div>
+          <div className="no-games">No games yet. Start playing!</div>
         ) : (
-          <div className="history-list">
+          <div className="history-list-modern">
             {gameHistory.map((game) => {
               const isWhite = game.whitePlayer._id === user.id;
               const opponent = isWhite ? game.blackPlayer : game.whitePlayer;
-              const result = game.winner === 'draw' ? 'Draw' : 
-                           (game.winner === (isWhite ? 'white' : 'black') ? 'Won' : 'Lost');
+              const result = game.winner === 'draw' ? 'draw' : 
+                           (game.winner === (isWhite ? 'white' : 'black') ? 'won' : 'lost');
               
               return (
-                <div key={game._id} className={`history-item ${result.toLowerCase()}`}>
+                <div key={game._id} className={`history-card ${result}`}>
+                  <div className="history-result-badge">{result.toUpperCase()}</div>
                   <div className="history-info">
                     <div className="history-opponent">vs {opponent.username}</div>
                     <div className="history-date">
                       {new Date(game.createdAt).toLocaleDateString()}
                     </div>
-                  </div>
-                  <div className={`history-result ${result.toLowerCase()}`}>
-                    {result}
                   </div>
                 </div>
               );

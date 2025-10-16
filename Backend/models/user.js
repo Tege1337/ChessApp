@@ -6,8 +6,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
-    trim: true,
-    minlength: 3
+    trim: true
   },
   email: {
     type: String,
@@ -18,8 +17,7 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
-    minlength: 6
+    required: true
   },
   stats: {
     elo: {
@@ -42,8 +40,8 @@ const userSchema = new mongoose.Schema({
   settings: {
     theme: {
       type: String,
-      default: 'dark',
-      enum: ['light', 'dark']
+      enum: ['light', 'dark'],
+      default: 'dark'
     },
     soundEffects: {
       type: Boolean,
@@ -51,10 +49,18 @@ const userSchema = new mongoose.Schema({
     },
     boardStyle: {
       type: String,
-      default: 'classic',
-      enum: ['classic', 'modern', 'wood']
+      enum: ['classic', 'modern', 'wood'],
+      default: 'classic'
     }
   },
+  friends: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  friendRequests: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
   createdAt: {
     type: Date,
     default: Date.now
@@ -64,11 +70,17 @@ const userSchema = new mongoose.Schema({
 // Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 12);
-  next();
+  
+  try {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+    next();
+  } catch (error) {
+    next(error);
+  }
 });
 
-// Compare password method
+// Method to compare password
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };

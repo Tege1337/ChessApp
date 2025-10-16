@@ -11,6 +11,7 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const User = require('./models/user');
 const GameHistory = require('./models/GameHistory');
+const friendsRoutes = require('./routes/friends');
 
 const app = express();
 const server = http.createServer(app);
@@ -32,6 +33,7 @@ mongoose.connect(process.env.MONGODB_URI)
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/friends', friendsRoutes);
 
 let games = new Map();
 let waitingPlayers = [];

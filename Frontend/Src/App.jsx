@@ -6,6 +6,7 @@ import Register from './Components/register';
 import GameBoard from './Components/gameboard';
 import Profile from './Components/profile';
 import Settings from './Components/settings';
+import Friends from './Components/friends';
 import './App.css';
 
 function PrivateRoute({ children }) {
@@ -34,6 +35,7 @@ function AppContent() {
         <Route path="/" element={<PrivateRoute><GameBoard /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
         <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} />
+        <Route path="/friends" element={<PrivateRoute><Friends /></PrivateRoute>} />
       </Routes>
     </div>
   );
