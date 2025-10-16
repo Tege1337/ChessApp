@@ -1893,3 +1893,253 @@ body {
   cursor: not-allowed;
 }
 
+/* Modern Profile Page */
+.profile-modern-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.profile-modern-header {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  border-radius: 24px;
+  padding: 3rem;
+  display: flex;
+  align-items: center;
+  gap: 3rem;
+  margin-bottom: 2.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-modern-header:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+}
+
+.profile-modern-avatar {
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: white;
+  box-shadow: 0 8px 24px rgba(8, 145, 178, 0.3);
+  flex-shrink: 0;
+  border: 4px solid white;
+}
+
+.profile-modern-info {
+  flex: 1;
+}
+
+.profile-modern-info h1 {
+  font-size: 2.8rem;
+  margin-bottom: 0.75rem;
+  color: var(--text);
+  font-weight: 800;
+}
+
+.profile-modern-elo {
+  font-size: 1.6rem;
+  color: var(--accent);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.profile-modern-email {
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+}
+
+.profile-edit-btn {
+  position: absolute;
+  top: 2rem;
+  right: 2rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.4rem;
+  cursor: pointer;
+  padding: 0.75rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.profile-edit-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--accent);
+  transform: scale(1.1);
+}
+
+.profile-modern-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.stat-modern-card {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-modern-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat-modern-card:hover::before {
+  opacity: 1;
+}
+
+.stat-modern-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+}
+
+.stat-modern-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: var(--accent);
+  transition: transform 0.3s ease;
+}
+
+.stat-modern-card:hover .stat-modern-icon {
+  transform: scale(1.2);
+}
+
+.stat-modern-value {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: var(--text);
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+.stat-modern-label {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profile-modern-history {
+  background: var(--bg-secondary);
+  border: 2px solid var(--border);
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.profile-modern-history h2 {
+  font-size: 2rem;
+  color: var(--text);
+  margin-bottom: 2rem;
+  font-weight: 700;
+}
+
+.profile-modern-loading,
+.profile-modern-no-games {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+
+.profile-modern-history-list {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-modern-history-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem;
+  background: var(--bg-tertiary);
+  border-radius: 16px;
+  transition: all 0.3s ease;
+}
+
+.profile-modern-history-card:hover {
+  transform: translateX(8px);
+}
+
+.profile-modern-history-card.won {
+  border-left: 4px solid var(--success);
+}
+
+.profile-modern-history-card.lost {
+  border-left: 4px solid var(--danger);
+}
+
+.profile-modern-history-card.draw {
+  border-left: 4px solid var(--warning);
+}
+
+.profile-modern-result-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.profile-modern-result-badge.won {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+}
+
+.profile-modern-result-badge.lost {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--danger);
+}
+
+.profile-modern-result-badge.draw {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+}
+
+.profile-modern-history-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-modern-opponent {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.profile-modern-date {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
