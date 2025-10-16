@@ -134,6 +134,23 @@ io.on('connection', (socket) => {
     }
   });
 
+  socket.on('sendChatMessage', ({ gameId, message }) => {
+    const gameData = games.get(gameId);
+    if (!gameData) return;
+
+    // Verify the user is part of this game
+    if (!gameData.players.includes(socket.userId)) return;
+
+    // Broadcast the message to all players in the game
+    io.to(gameId).emit('chatMessage', {
+      username: socket.username,
+      message: message,
+      timestamp: new Date()
+    });
+
+    console.log(`Chat message in game ${gameId} from ${socket.username}: ${message}`);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.username);
     userSockets.delete(socket.userId);
