@@ -3,6 +3,7 @@ import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import io from 'socket.io-client';
 import { useAuth } from '../Context/AuthContext';
+import { FaSearch, FaTrophy, FaChessPawn } from 'react-icons/fa';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -13,8 +14,19 @@ function GameBoard() {
   const [gameId, setGameId] = useState(null);
   const [playerColor, setPlayerColor] = useState(null);
   const [opponent, setOpponent] = useState(null);
-  const [status, setStatus] = useState('Click "Find Game" to start');
+  const [status, setStatus] = useState('Ready to play!');
   const [isWaiting, setIsWaiting] = useState(false);
+  const [dots, setDots] = useState('');
+
+  // Animated dots for waiting state
+  useEffect(() => {
+    if (isWaiting) {
+      const interval = setInterval(() => {
+        setDots(prev => prev.length >= 3 ? '' : prev + '.');
+      }, 500);
+      return () => clearInterval(interval);
+    }
+  }, [isWaiting]);
 
   useEffect(() => {
     const newSocket = io(API_URL, {
@@ -23,9 +35,19 @@ function GameBoard() {
 
     setSocket(newSocket);
 
+    newSocket.on('connect', () => {
+      console.log('✅ Connected to game server');
+      setStatus('Connected! Ready to play.');
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.error('❌ Connection error:', error);
+      setStatus('Connection error. Please refresh the page.');
+    });
+
     newSocket.on('waiting', () => {
       setIsWaiting(true);
-      setStatus('Waiting for opponent...');
+      setStatus('Searching for opponent');
     });
 
     newSocket.on('gameStart', ({ gameId, color, opponent, fen }) => {
@@ -35,7 +57,7 @@ function GameBoard() {
       setIsWaiting(false);
       const newGame = new Chess(fen);
       setGame(newGame);
-      setStatus(`Game started! You are playing as ${color} against ${opponent.username} (ELO: ${opponent.elo})`);
+      setStatus(`Game started! You are ${color}`);
     });
 
     newSocket.on('moveMade', ({ fen, isCheck, isCheckmate, isGameOver }) => {
@@ -45,26 +67,39 @@ function GameBoard() {
       if (isCheckmate) {
         setStatus(`Checkmate! ${newGame.turn() === 'w' ? 'Black' : 'White'} wins!`);
       } else if (isGameOver) {
-        setStatus('Game Over!');
+        setStatus('Game Over - Draw');
       } else if (isCheck) {
-        setStatus('Check!');
+        setStatus('Check! ⚠️');
       } else {
         setStatus(`${newGame.turn() === 'w' ? 'White' : 'Black'}'s turn`);
       }
     });
 
     newSocket.on('opponentDisconnected', () => {
-      setStatus('Opponent disconnected. You win!');
+      setStatus('Opponent disconnected. You win! 🎉');
       setGameId(null);
+      setOpponent(null);
+      setPlayerColor(null);
+      setIsWaiting(false);
     });
 
     return () => newSocket.close();
   }, [token]);
 
   const findGame = () => {
-    if (socket) {
+    if (socket && socket.connected) {
       socket.emit('joinGame');
+      setIsWaiting(true);
+      setStatus('Joining matchmaking queue...');
+    } else {
+      setStatus('Not connected to server. Please refresh.');
     }
+  };
+
+  const cancelSearch = () => {
+    setIsWaiting(false);
+    setStatus('Search cancelled');
+    // You could emit a 'cancelSearch' event to the server here
   };
 
   const onDrop = (sourceSquare, targetSquare) => {
@@ -100,47 +135,93 @@ function GameBoard() {
 
   return (
     <div className="game-container">
-      <div className="game-info">
-        <div className="status-bar">{status}</div>
-        
+      <div className="game-sidebar">
+        {/* Status Card */}
+        <div className="status-card">
+          <div className="status-icon">
+            {isWaiting ? <FaSearch className="pulse" /> : <FaChessPawn />}
+          </div>
+          <div className="status-text">{status}</div>
+          {isWaiting && <div className="searching-dots">{dots}</div>}
+        </div>
+
+        {/* Opponent Info */}
         {opponent && (
-          <div className="opponent-info">
-            <div className="opponent-avatar">{opponent.username[0].toUpperCase()}</div>
-            <div>
-              <div className="opponent-name">{opponent.username}</div>
-              <div className="opponent-elo">ELO: {opponent.elo}</div>
+          <div className="player-card opponent-card">
+            <div className="player-card-header">
+              <span className="player-label">Opponent</span>
+              <FaTrophy className="trophy-small" />
+            </div>
+            <div className="player-card-content">
+              <div className="player-avatar opponent-avatar">
+                {opponent.username[0].toUpperCase()}
+              </div>
+              <div className="player-details">
+                <div className="player-username">{opponent.username}</div>
+                <div className="player-elo-badge">{opponent.elo} ELO</div>
+              </div>
             </div>
           </div>
         )}
-        
+
+        {/* Matchmaking Queue */}
+        {isWaiting && (
+          <div className="queue-card">
+            <div className="queue-animation">
+              <div className="queue-circle"></div>
+              <div className="queue-circle"></div>
+              <div className="queue-circle"></div>
+            </div>
+            <h3>Finding opponent{dots}</h3>
+            <p>Looking for a player with similar ELO</p>
+            <button onClick={cancelSearch} className="cancel-button">
+              Cancel Search
+            </button>
+          </div>
+        )}
+
+        {/* Find Game Button */}
         {!gameId && !isWaiting && (
-          <button onClick={findGame} className="find-game-button">
-            Find Game
+          <button onClick={findGame} className="find-game-btn">
+            <FaSearch />
+            <span>Find Game</span>
           </button>
+        )}
+
+        {/* Current Player Info */}
+        {user && (
+          <div className="player-card current-player-card">
+            <div className="player-card-header">
+              <span className="player-label">You</span>
+              {gameId && <span className="color-badge">{playerColor}</span>}
+            </div>
+            <div className="player-card-content">
+              <div className="player-avatar current-avatar">
+                {user.username[0].toUpperCase()}
+              </div>
+              <div className="player-details">
+                <div className="player-username">{user.username}</div>
+                <div className="player-elo-badge">{user.stats.elo} ELO</div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
-      <div className="board-wrapper">
+      {/* Chess Board */}
+      <div className="board-container">
         <Chessboard 
           position={game.fen()} 
           onPieceDrop={onDrop}
           boardOrientation={playerColor || 'white'}
           customBoardStyle={{
-            borderRadius: '10px',
-            boxShadow: '0 10px 40px rgba(0,0,0,0.4)'
+            borderRadius: '12px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
           }}
+          customDarkSquareStyle={{ backgroundColor: '#7c3aed' }}
+          customLightSquareStyle={{ backgroundColor: '#e9d5ff' }}
         />
       </div>
-
-      {user && (
-        <div className="player-info">
-          <div className="player-avatar">{user.username[0].toUpperCase()}</div>
-          <div>
-            <div className="player-name">{user.username}</div>
-            <div className="player-elo">ELO: {user.stats.elo}</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
