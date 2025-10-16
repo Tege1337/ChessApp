@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../Context/AuthContext';
+import { useAuth } from '../../src/Context/AuthContext';
 import { FaChessKnight } from 'react-icons/fa';
 
 function Register() {

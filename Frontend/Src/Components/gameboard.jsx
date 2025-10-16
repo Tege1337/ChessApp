@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import io from 'socket.io-client';
-import { useAuth } from '../Context/AuthContext';
+import { useAuth } from '../../src/Context/AuthContext';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 

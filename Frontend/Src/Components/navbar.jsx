@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../Context/AuthContext';
+import { useAuth } from '../../src/Context/AuthContext';
 import { FaChessKnight, FaUser, FaCog, FaSignOutAlt } from 'react-icons/fa';
 
 function Navbar() {
