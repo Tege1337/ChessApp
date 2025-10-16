@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../Context/AuthContext';
 import { FaChessKnight, FaUser, FaCog, FaSignOutAlt } from 'react-icons/fa';
 import { FaUserFriends } from 'react-icons/fa';
+import { FaRobot } from 'react-icons/fa';
 
 function Navbar() {
   const { user, logout } = useAuth();
@@ -22,6 +23,9 @@ function Navbar() {
         
         <div className="nav-menu">
           <Link to="/" className="nav-link">Play</Link>
+          <Link to="/practice" className="nav-link">
+            <FaRobot /> Practice
+          </Link>
           <Link to="/profile" className="nav-link">
             <FaUser /> Profile
           </Link>
