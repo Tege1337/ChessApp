@@ -1,52 +1,34 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../Context/AuthContext';
-import { FaChessKnight, FaUser, FaCog, FaSignOutAlt } from 'react-icons/fa';
-import { FaUserFriends } from 'react-icons/fa';
-import { FaRobot } from 'react-icons/fa';
+import { FaChessKnight, FaUser, FaCog, FaSignOutAlt, FaUserFriends, FaRobot } from 'react-icons/fa';
 
 function Navbar() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
+  const { logout, user } = useAuth();
 
   return (
     <nav className="navbar">
-      <div className="nav-container">
-        <Link to="/" className="nav-logo">
-          <FaChessKnight className="nav-logo-icon" />
-          ChessApp
+      <Link to="/" className="navbar-brand">
+        <FaChessKnight /> Chess Arena
+      </Link>
+      <div className="navbar-links">
+        <Link to="/" className="nav-link">
+          <FaChessKnight /> Play
         </Link>
-        
-        <div className="nav-menu">
-          <Link to="/" className="nav-link">Play</Link>
-          <Link to="/practice" className="nav-link">
-            <FaRobot /> Practice
-          </Link>
-          <Link to="/profile" className="nav-link">
-            <FaUser /> Profile
-          </Link>
-          <Link to="/friends" className="nav-link">
-            <FaUserFriends /> Friends
-          </Link>
-          <Link to="/settings" className="nav-link">
-            <FaCog /> Settings
-          </Link>
-          <button onClick={handleLogout} className="nav-link logout-btn">
-            <FaSignOutAlt /> Logout
-          </button>
-        </div>
-
-        <div className="nav-user">
-          <div className="user-avatar">{user?.username?.[0]?.toUpperCase()}</div>
-          <div className="user-info">
-            <div className="user-name">{user?.username}</div>
-            <div className="user-elo">ELO: {user?.stats?.elo}</div>
-          </div>
-        </div>
+        <Link to="/practice" className="nav-link">
+          <FaRobot /> Practice
+        </Link>
+        <Link to="/friends" className="nav-link">
+          <FaUserFriends /> Friends
+        </Link>
+        <Link to="/profile" className="nav-link">
+          <FaUser /> Profile
+        </Link>
+        <Link to="/settings" className="nav-link">
+          <FaCog /> Settings
+        </Link>
+        <button onClick={logout} className="logout-btn">
+          <FaSignOutAlt /> Logout
+        </button>
       </div>
     </nav>
   );
