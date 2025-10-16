@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import io from 'socket.io-client';
 import { useAuth } from '../Context/AuthContext';
-import { FaSearch, FaTrophy, FaChessPawn, FaTimes } from 'react-icons/fa';
+import { FaSearch, FaTrophy, FaTimes } from 'react-icons/fa';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -21,22 +21,14 @@ function GameBoard() {
   const [legalMoves, setLegalMoves] = useState([]);
   const [gameOverMessage, setGameOverMessage] = useState(null);
   const [premove, setPremove] = useState(null);
+  const socketRef = useRef(null);
 
   const boardStyle = user?.settings?.boardStyle || 'classic';
 
   const boardStyles = {
-    classic: {
-      light: '#d1d5db',
-      dark: '#4b5563'
-    },
-    modern: {
-      light: '#e0e7ff',
-      dark: '#4f46e5'
-    },
-    wood: {
-      light: '#f0d9b5',
-      dark: '#b58863'
-    }
+    classic: { light: '#d1d5db', dark: '#4b5563' },
+    modern: { light: '#e0e7ff', dark: '#4f46e5' },
+    wood: { light: '#f0d9b5', dark: '#b58863' }
   };
 
   useEffect(() => {
@@ -49,10 +41,8 @@ function GameBoard() {
   }, [isWaiting]);
 
   useEffect(() => {
-    const newSocket = io(API_URL, {
-      auth: { token }
-    });
-
+    const newSocket = io(API_URL, { auth: { token } });
+    socketRef.current = newSocket;
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
@@ -80,38 +70,45 @@ function GameBoard() {
       setStatus(`Game started! You are ${color}`);
       setGameOverMessage(null);
       setPremove(null);
+      setSelectedSquare(null);
+      setLegalMoves([]);
     });
 
     newSocket.on('moveMade', ({ fen, isCheck, isCheckmate, isGameOver }) => {
       const newGame = new Chess(fen);
-      
-      // Execute premove if it's our turn now and we have a premove set
-      if (premove && newGame.turn() === (playerColor === 'white' ? 'w' : 'b')) {
-        setTimeout(() => {
-          const testGame = new Chess(newGame.fen());
-          const move = testGame.move({
-            from: premove.from,
-            to: premove.to,
-            promotion: 'q'
-          });
-          
-          if (move && socket) {
-            setGame(testGame);
-            socket.emit('makeMove', {
-              gameId,
-              move: { from: premove.from, to: premove.to, promotion: 'q' }
-            });
-          }
-          setPremove(null);
-          setSelectedSquare(null);
-          setLegalMoves([]);
-        }, 100);
-      } else {
-        setGame(newGame);
-      }
-      
+      setGame(newGame);
       setSelectedSquare(null);
       setLegalMoves([]);
+      
+      // Check if it's now our turn and we have a premove
+      const myColor = playerColor === 'white' ? 'w' : 'b';
+      if (newGame.turn() === myColor && premove) {
+        // Execute premove after a tiny delay
+        setTimeout(() => {
+          const testGame = new Chess(newGame.fen());
+          try {
+            const move = testGame.move({
+              from: premove.from,
+              to: premove.to,
+              promotion: 'q'
+            });
+            
+            if (move && socketRef.current) {
+              setGame(testGame);
+              socketRef.current.emit('makeMove', {
+                gameId,
+                move: { from: premove.from, to: premove.to, promotion: 'q' }
+              });
+              console.log('✅ Premove executed:', premove);
+            } else {
+              console.log('❌ Invalid premove');
+            }
+          } catch (error) {
+            console.log('❌ Premove failed:', error);
+          }
+          setPremove(null);
+        }, 100);
+      }
       
       if (isCheckmate) {
         const winner = newGame.turn() === 'w' ? 'Black' : 'White';
@@ -124,11 +121,7 @@ function GameBoard() {
         setPremove(null);
       } else if (isGameOver) {
         setStatus('Game Over - Draw');
-        setGameOverMessage({
-          title: 'Draw',
-          message: 'Game ended in a draw',
-          type: 'draw'
-        });
+        setGameOverMessage({ title: 'Draw', message: 'Game ended in a draw', type: 'draw' });
         setPremove(null);
       } else if (isCheck) {
         setStatus('Check! ⚠️');
@@ -139,11 +132,7 @@ function GameBoard() {
 
     newSocket.on('opponentDisconnected', () => {
       setStatus('Opponent disconnected. You win! 🎉');
-      setGameOverMessage({
-        title: 'Victory!',
-        message: 'Opponent disconnected',
-        type: 'win'
-      });
+      setGameOverMessage({ title: 'Victory!', message: 'Opponent disconnected', type: 'win' });
       setPremove(null);
       setTimeout(() => {
         setGameId(null);
@@ -153,8 +142,11 @@ function GameBoard() {
       }, 3000);
     });
 
-    return () => newSocket.close();
-  }, [token, premove, gameId, playerColor, socket]);
+    return () => {
+      newSocket.close();
+      socketRef.current = null;
+    };
+  }, [token, gameId, playerColor, premove]);
 
   const findGame = () => {
     if (socket && socket.connected) {
@@ -183,23 +175,29 @@ function GameBoard() {
     const piece = gameCopy.get(square);
     const myColor = playerColor === 'white' ? 'w' : 'b';
 
-    // If it's not my turn, handle premoves
+    // If it's NOT my turn, handle premoves
     if (!isMyTurn()) {
       if (selectedSquare) {
-        // Set premove
+        // Make premove
         setPremove({ from: selectedSquare, to: square });
         setSelectedSquare(null);
         setLegalMoves([]);
+        console.log('⏱️ Premove set:', selectedSquare, '->', square);
       } else if (piece && piece.color === myColor) {
         // Select piece for premove
         setSelectedSquare(square);
         const moves = gameCopy.moves({ square, verbose: true });
         setLegalMoves(moves.map(m => m.to));
+      } else {
+        // Clicked empty square - clear selection
+        setSelectedSquare(null);
+        setLegalMoves([]);
+        setPremove(null);
       }
       return;
     }
 
-    // Normal move (it's my turn)
+    // It IS my turn - make normal move
     if (selectedSquare) {
       const move = gameCopy.move({
         from: selectedSquare,
@@ -217,7 +215,7 @@ function GameBoard() {
         setLegalMoves([]);
         setPremove(null);
       } else if (piece && piece.color === myColor) {
-        // Clicking on another own piece - select it
+        // Clicking another own piece - select it
         setSelectedSquare(square);
         const moves = gameCopy.moves({ square, verbose: true });
         setLegalMoves(moves.map(m => m.to));
@@ -242,6 +240,7 @@ function GameBoard() {
     // If not our turn, set as premove
     if (!isMyTurn()) {
       setPremove({ from: sourceSquare, to: targetSquare });
+      console.log('⏱️ Premove set via drag:', sourceSquare, '->', targetSquare);
       return false;
     }
 
@@ -274,8 +273,14 @@ function GameBoard() {
     customSquareStyles[selectedSquare] = { backgroundColor: 'rgba(255, 255, 0, 0.4)' };
   }
   if (premove) {
-    customSquareStyles[premove.from] = { backgroundColor: 'rgba(239, 68, 68, 0.4)' };
-    customSquareStyles[premove.to] = { backgroundColor: 'rgba(239, 68, 68, 0.6)' };
+    customSquareStyles[premove.from] = { 
+      backgroundColor: 'rgba(239, 68, 68, 0.5)',
+      boxShadow: 'inset 0 0 0 3px rgba(239, 68, 68, 0.8)'
+    };
+    customSquareStyles[premove.to] = { 
+      backgroundColor: 'rgba(239, 68, 68, 0.7)',
+      boxShadow: 'inset 0 0 0 3px rgba(239, 68, 68, 0.8)'
+    };
   }
   legalMoves.forEach(square => {
     customSquareStyles[square] = { 

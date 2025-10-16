@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { useAuth } from '../Context/AuthContext';
-import { FaRobot, FaTimes, FaUndo, FaTrophy, FaPuzzlePiece, FaArrowRight, FaCheck, FaLightbulb } from 'react-icons/fa';
+import { FaRobot, FaTimes, FaUndo, FaTrophy, FaPuzzlePiece, FaArrowRight, FaLightbulb, FaRandom } from 'react-icons/fa';
+import { PUZZLES, getPuzzlesByRating, getRandomPuzzle } from '../Data/puzzles';
 
 // Sample chess puzzles
 const PUZZLES = [
@@ -164,20 +165,34 @@ function Practice() {
     }
   };
 
-  const startPuzzle = () => {
-    const puzzle = PUZZLES[puzzleIndex];
-    setCurrentPuzzle(puzzle);
-    const newGame = new Chess(puzzle.fen);
-    setGame(newGame);
-    setMode('puzzle');
-    setGameStarted(true);
-    setSolutionIndex(0);
-    setPuzzleSolved(false);
-    setMoveHistory([]);
-    setPlayerColor(newGame.turn() === 'w' ? 'white' : 'black');
-    setStatus(puzzle.description);
-    setGameOverMessage(null);
-  };
+const startPuzzle = (difficulty = 'random') => {
+  let puzzle;
+  
+  if (difficulty === 'easy') {
+    const easyPuzzles = getPuzzlesByRating(600, 1200);
+    puzzle = easyPuzzles[Math.floor(Math.random() * easyPuzzles.length)];
+  } else if (difficulty === 'medium') {
+    const mediumPuzzles = getPuzzlesByRating(1200, 1800);
+    puzzle = mediumPuzzles[Math.floor(Math.random() * mediumPuzzles.length)];
+  } else if (difficulty === 'hard') {
+    const hardPuzzles = getPuzzlesByRating(1800, 2500);
+    puzzle = hardPuzzles[Math.floor(Math.random() * hardPuzzles.length)];
+  } else {
+    puzzle = getRandomPuzzle();
+  }
+  
+  setCurrentPuzzle(puzzle);
+  const newGame = new Chess(puzzle.fen);
+  setGame(newGame);
+  setMode('puzzle');
+  setGameStarted(true);
+  setSolutionIndex(0);
+  setPuzzleSolved(false);
+  setMoveHistory([]);
+  setPlayerColor(newGame.turn() === 'w' ? 'white' : 'black');
+  setStatus(`Rating: ${puzzle.rating} - Find the best move!`);
+  setGameOverMessage(null);
+};
 
   const nextPuzzle = () => {
     setPuzzleIndex((puzzleIndex + 1) % PUZZLES.length);
