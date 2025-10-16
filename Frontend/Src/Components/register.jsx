@@ -41,69 +41,124 @@ function Register() {
 
   return (
     <div className="auth-container">
+      <div className="auth-background">
+        <div className="auth-background-pattern"></div>
+        <div className="auth-background-overlay"></div>
+      </div>
+      
       <div className="auth-card">
         <div className="auth-header">
-          <FaChessKnight className="auth-logo" />
+          <div className="auth-logo-container">
+            <FaChessKnight className="auth-logo" />
+          </div>
           <h1>Create Account</h1>
-          <p>Join the chess community</p>
+          <p>Join our chess community and start your journey</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
-          {error && <div className="error-message">{error}</div>}
+          {error && (
+            <div className="error-message">
+              <span className="error-icon">⚠️</span>
+              {error}
+            </div>
+          )}
           
           <div className="form-group">
             <label>Username</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              minLength={3}
-              placeholder="Choose a username"
-            />
+            <div className="input-container">
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                minLength={3}
+                placeholder="Choose a username"
+                className="modern-input"
+              />
+              <span className="input-border"></span>
+            </div>
           </div>
 
           <div className="form-group">
-            <label>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="Enter your email"
-            />
+            <label>Email Address</label>
+            <div className="input-container">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                placeholder="Enter your email"
+                className="modern-input"
+              />
+              <span className="input-border"></span>
+            </div>
           </div>
 
           <div className="form-group">
             <label>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              minLength={6}
-              placeholder="Create a password"
-            />
+            <div className="input-container">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                placeholder="Create a password"
+                className="modern-input"
+              />
+              <span className="input-border"></span>
+            </div>
+            <span className="input-hint">Must be at least 6 characters</span>
           </div>
 
           <div className="form-group">
             <label>Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              placeholder="Confirm your password"
-            />
+            <div className="input-container">
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                placeholder="Confirm your password"
+                className="modern-input"
+              />
+              <span className="input-border"></span>
+            </div>
           </div>
 
-          <button type="submit" className="auth-button" disabled={loading}>
-            {loading ? 'Creating account...' : 'Register'}
+          <div className="terms-checkbox">
+            <input type="checkbox" id="terms" required />
+            <label htmlFor="terms">
+              I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>
+            </label>
+          </div>
+
+          <button 
+            type="submit" 
+            className={`auth-button ${loading ? 'loading' : ''}`} 
+            disabled={loading}
+          >
+            <span className="button-text">
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </span>
+            <span className="button-loader"></span>
           </button>
         </form>
 
+        <div className="auth-divider">
+          <span>or</span>
+        </div>
+
+        <div className="social-auth">
+          <button className="social-button google">
+            <img src="https://www.google.com/favicon.ico" alt="Google" />
+            Continue with Google
+          </button>
+        </div>
+
         <div className="auth-footer">
-          Already have an account? <Link to="/login">Login here</Link>
+          <span>Already have an account?</span>
+          <Link to="/login" className="auth-link">Sign In</Link>
         </div>
       </div>
     </div>
