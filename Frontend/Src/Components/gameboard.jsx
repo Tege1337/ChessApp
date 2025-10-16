@@ -55,14 +55,19 @@ function GameBoard() {
     socketRef.current = newSocket;
     setSocket(newSocket);
 
-    newSocket.on('connect', () => {
+    socket.on('connect', () => {
       console.log('✅ Connected to game server');
       setStatus('Connected! Ready to play.');
     });
 
-    newSocket.on('connect_error', (error) => {
+    socket.on('connect_error', (error) => {
       console.error('❌ Connection error:', error);
       setStatus('Connection error. Please refresh the page.');
+    });
+
+    socket.on('error', (error) => {
+      console.error('Socket error:', error);
+      setStatus('Connection error. Attempting to reconnect...');
     });
 
     newSocket.on('waiting', () => {
@@ -181,12 +186,18 @@ function GameBoard() {
       setStatus('Joining matchmaking queue...');
     } else {
       setStatus('Not connected to server. Please refresh.');
+      // Attempt to reconnect
+      const newSocket = io(API_URL, { auth: { token } });
+      setSocket(newSocket);
     }
   };
 
   const cancelSearch = () => {
-    setIsWaiting(false);
-    setStatus('Search cancelled');
+    if (socket) {
+      socket.emit('cancelSearch');
+      setIsWaiting(false);
+      setStatus('Search cancelled');
+    }
   };
 
   const isMyTurn = () => {

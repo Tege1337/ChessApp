@@ -3,6 +3,9 @@ import { FaPaperPlane, FaSmile, FaTimes } from 'react-icons/fa';
 
 const EMOJIS = ['😀', '😂', '😎', '🤔', '😢', '😡', '👍', '👎', '🔥', '💯', '🎉', '👏', '🤝', '💪', '🙏', '❤️', '⚡', '✨', '🎯', '♟️', '👑', '🏆'];
 
+const MAX_MESSAGES = 50; // Maximum number of messages to keep in state
+const MESSAGE_TIMEOUT = 500; // Minimum time between messages in milliseconds
+
 function GameChat({ socket, gameId, playerUsername, opponentUsername }) {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -11,20 +14,36 @@ function GameChat({ socket, gameId, playerUsername, opponentUsername }) {
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
 
+  const lastMessageTime = useRef(0);
+
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('chatMessage', (data) => {
-      setMessages(prev => [...prev, {
-        username: data.username,
-        message: data.message,
-        timestamp: new Date(data.timestamp),
-        isOwn: data.username === playerUsername
-      }]);
-    });
+    const handleChatMessage = (data) => {
+      const now = Date.now();
+      if (now - lastMessageTime.current < MESSAGE_TIMEOUT) {
+        console.log('Message rate limited');
+        return;
+      }
+      lastMessageTime.current = now;
+
+      setMessages(prev => {
+        const newMessages = [...prev, {
+          username: data.username,
+          message: data.message,
+          timestamp: new Date(data.timestamp),
+          isOwn: data.username === playerUsername,
+          id: `${Date.now()}-${Math.random()}`
+        }];
+        // Keep only the last MAX_MESSAGES messages
+        return newMessages.slice(-MAX_MESSAGES);
+      });
+    };
+
+    socket.on('chatMessage', handleChatMessage);
 
     return () => {
-      socket.off('chatMessage');
+      socket.off('chatMessage', handleChatMessage);
     };
   }, [socket, playerUsername]);
 
@@ -41,13 +60,36 @@ function GameChat({ socket, gameId, playerUsername, opponentUsername }) {
     
     if (!inputMessage.trim() || !socket || !gameId) return;
 
-    socket.emit('sendChatMessage', {
-      gameId,
-      message: inputMessage.trim()
-    });
+    const now = Date.now();
+    if (now - lastMessageTime.current < MESSAGE_TIMEOUT) {
+      console.log('Message sending rate limited');
+      return;
+    }
+    lastMessageTime.current = now;
 
-    setInputMessage('');
-    setShowEmojiPicker(false);
+    try {
+      socket.emit('sendChatMessage', {
+        gameId,
+        message: inputMessage.trim().slice(0, 200) // Limit message length
+      });
+
+      // Optimistically add message to state
+      setMessages(prev => {
+        const newMessages = [...prev, {
+          username: playerUsername,
+          message: inputMessage.trim(),
+          timestamp: new Date(),
+          isOwn: true,
+          id: `${Date.now()}-${Math.random()}`
+        }];
+        return newMessages.slice(-MAX_MESSAGES);
+      });
+
+      setInputMessage('');
+      setShowEmojiPicker(false);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+    }
   };
 
   const addEmoji = (emoji) => {

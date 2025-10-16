@@ -18,8 +18,11 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: ["https://chess-app-rose.vercel.app", "http://localhost:5173"],
-    methods: ["GET", "POST"]
-  }
+    methods: ["GET", "POST"],
+    credentials: true
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
 app.use(cors());
@@ -43,18 +46,32 @@ let userSockets = new Map(); // userId -> socketId
 io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth.token;
-    if (!token) return next(new Error('Authentication required'));
+    if (!token) {
+      console.log('No token provided');
+      return next(new Error('Authentication required'));
+    }
     
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.userId);
     
-    if (!user) return next(new Error('User not found'));
+    if (!user) {
+      console.log('User not found:', decoded.userId);
+      return next(new Error('User not found'));
+    }
     
     socket.userId = user._id.toString();
     socket.username = user.username;
     socket.elo = user.stats.elo;
+    
+    // Remove any existing socket connections for this user
+    const existingSocketId = userSockets.get(socket.userId);
+    if (existingSocketId && io.sockets.sockets.has(existingSocketId)) {
+      io.sockets.sockets.get(existingSocketId).disconnect(true);
+    }
+    
     next();
   } catch (error) {
+    console.error('Socket authentication error:', error);
     next(new Error('Authentication failed'));
   }
 });
@@ -104,13 +121,19 @@ io.on('connection', (socket) => {
 
   socket.on('makeMove', async ({ gameId, move }) => {
     const gameData = games.get(gameId);
-    if (!gameData) return;
+    if (!gameData) {
+      console.log('Game not found:', gameId);
+      return;
+    }
 
     const { chess, white, black, moves } = gameData;
     const isWhiteTurn = chess.turn() === 'w';
     const isPlayersTurn = (isWhiteTurn && socket.userId === white.id) || (!isWhiteTurn && socket.userId === black.id);
     
-    if (!isPlayersTurn) return;
+    if (!isPlayersTurn) {
+      console.log('Not player\'s turn:', socket.username);
+      return;
+    }
 
     try {
       const result = chess.move(move);
@@ -125,49 +148,87 @@ io.on('connection', (socket) => {
         };
         moves.push(moveData);
 
-        io.to(gameId).emit('moveMade', {
+        const gameState = {
           move: moveData,
           fen: chess.fen(),
           lastMove: { from: move.from, to: move.to },
           isCheck: chess.isCheck(),
           isCheckmate: chess.isCheckmate(),
-          isGameOver: chess.isGameOver()
-        });
+          isStalemate: chess.isStalemate(),
+          isDraw: chess.isDraw(),
+          isGameOver: chess.isGameOver(),
+          turn: chess.turn()
+        };
 
-        if (chess.isGameOver()) {
+        // Update game data in the map
+        games.set(gameId, { ...gameData, chess, moves });
+
+        // Emit move to both players
+        io.to(gameId).emit('moveMade', gameState);
+
+        if (gameState.isGameOver) {
           await handleGameEnd(gameId, gameData, chess);
         }
+      } else {
+        socket.emit('moveError', { message: 'Invalid move' });
       }
     } catch (error) {
-      console.error('Invalid move');
+      console.error('Move error:', error);
+      socket.emit('moveError', { message: 'Invalid move' });
     }
   });
 
   // Handle chat messages
   socket.on('sendChatMessage', ({ gameId, message }) => {
     const gameData = games.get(gameId);
-    if (!gameData || !gameData.players.includes(socket.userId)) return;
+    if (!gameData || !gameData.players.includes(socket.userId)) {
+      console.log('Invalid chat attempt:', { gameId, userId: socket.userId });
+      return;
+    }
+
+    if (!message || typeof message !== 'string' || message.trim().length === 0) {
+      console.log('Invalid message format');
+      return;
+    }
 
     const chatMessage = {
       username: socket.username,
-      message: message,
-      timestamp: new Date()
+      message: message.slice(0, 200).trim(), // Limit message length
+      timestamp: new Date(),
+      userId: socket.userId
     };
 
     io.to(gameId).emit('chatMessage', chatMessage);
   });
 
-  socket.on('disconnect', () => {
+  socket.on('disconnect', async () => {
     console.log('Client disconnected:', socket.username);
     userSockets.delete(socket.userId);
     
+    // Remove from waiting list if present
     const index = waitingPlayers.findIndex(p => p.userId === socket.userId);
-    if (index !== -1) waitingPlayers.splice(index, 1);
+    if (index !== -1) {
+      waitingPlayers.splice(index, 1);
+      console.log('Removed from waiting list:', socket.username);
+    }
     
-    games.forEach((gameData, gameId) => {
+    // Handle active games
+    for (const [gameId, gameData] of games.entries()) {
       if (gameData.players.includes(socket.userId)) {
-        io.to(gameId).emit('opponentDisconnected');
+        // Notify opponent
+        io.to(gameId).emit('opponentDisconnected', {
+          username: socket.username,
+          gameId: gameId
+        });
+        
+        // Save game result if it was in progress
+        if (gameData.moves.length > 0) {
+          const winner = gameData.white.id === socket.userId ? 'black' : 'white';
+          await handleGameEnd(gameId, gameData, gameData.chess, 'disconnect');
+        }
+        
         games.delete(gameId);
+        console.log('Game cleaned up:', gameId);
       }
     });
   });
