@@ -5,45 +5,6 @@ import { useAuth } from '../Context/AuthContext';
 import { FaRobot, FaTimes, FaUndo, FaTrophy, FaPuzzlePiece, FaArrowRight, FaLightbulb, FaRandom } from 'react-icons/fa';
 import { PUZZLES, getPuzzlesByRating, getRandomPuzzle } from '../Data/puzzles';
 
-// Sample chess puzzles
-const PUZZLES = [
-  {
-    id: 1,
-    fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR w KQkq - 4 4',
-    solution: ['h5f7'],
-    description: 'White to move and win',
-    difficulty: 'easy'
-  },
-  {
-    id: 2,
-    fen: 'r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 4',
-    solution: ['f3f7'],
-    description: 'Scholar\'s Mate - White to move',
-    difficulty: 'easy'
-  },
-  {
-    id: 3,
-    fen: 'r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/3P1N2/PPP2PPP/RNBQK2R w KQkq - 0 5',
-    solution: ['c4f7', 'e8f7', 'f3g5'],
-    description: 'Win material with a fork',
-    difficulty: 'medium'
-  },
-  {
-    id: 4,
-    fen: 'r1bqkb1r/pppp1ppp/2n2n2/4p3/2BPP3/5N2/PPP2PPP/RNBQK2R b KQkq - 0 4',
-    solution: ['f6e4'],
-    description: 'Black to move and win a pawn',
-    difficulty: 'easy'
-  },
-  {
-    id: 5,
-    fen: '6k1/5ppp/8/8/8/8/5PPP/3R2K1 w - - 0 1',
-    solution: ['d1d8'],
-    description: 'Back rank mate',
-    difficulty: 'easy'
-  }
-];
-
 function Practice() {
   const { user } = useAuth();
   const [mode, setMode] = useState(null); // 'bot' or 'puzzle'
@@ -59,7 +20,6 @@ function Practice() {
 
   // Puzzle mode
   const [currentPuzzle, setCurrentPuzzle] = useState(null);
-  const [puzzleIndex, setPuzzleIndex] = useState(0);
   const [solutionIndex, setSolutionIndex] = useState(0);
   const [puzzleSolved, setPuzzleSolved] = useState(false);
   const [moveHistory, setMoveHistory] = useState([]);
@@ -165,38 +125,37 @@ function Practice() {
     }
   };
 
-const startPuzzle = (difficulty = 'random') => {
-  let puzzle;
-  
-  if (difficulty === 'easy') {
-    const easyPuzzles = getPuzzlesByRating(600, 1200);
-    puzzle = easyPuzzles[Math.floor(Math.random() * easyPuzzles.length)];
-  } else if (difficulty === 'medium') {
-    const mediumPuzzles = getPuzzlesByRating(1200, 1800);
-    puzzle = mediumPuzzles[Math.floor(Math.random() * mediumPuzzles.length)];
-  } else if (difficulty === 'hard') {
-    const hardPuzzles = getPuzzlesByRating(1800, 2500);
-    puzzle = hardPuzzles[Math.floor(Math.random() * hardPuzzles.length)];
-  } else {
-    puzzle = getRandomPuzzle();
-  }
-  
-  setCurrentPuzzle(puzzle);
-  const newGame = new Chess(puzzle.fen);
-  setGame(newGame);
-  setMode('puzzle');
-  setGameStarted(true);
-  setSolutionIndex(0);
-  setPuzzleSolved(false);
-  setMoveHistory([]);
-  setPlayerColor(newGame.turn() === 'w' ? 'white' : 'black');
-  setStatus(`Rating: ${puzzle.rating} - Find the best move!`);
-  setGameOverMessage(null);
-};
+  const startPuzzle = (difficulty = 'random') => {
+    let puzzle;
+    
+    if (difficulty === 'easy') {
+      const easyPuzzles = getPuzzlesByRating(600, 1200);
+      puzzle = easyPuzzles[Math.floor(Math.random() * easyPuzzles.length)];
+    } else if (difficulty === 'medium') {
+      const mediumPuzzles = getPuzzlesByRating(1200, 1800);
+      puzzle = mediumPuzzles[Math.floor(Math.random() * mediumPuzzles.length)];
+    } else if (difficulty === 'hard') {
+      const hardPuzzles = getPuzzlesByRating(1800, 2500);
+      puzzle = hardPuzzles[Math.floor(Math.random() * hardPuzzles.length)];
+    } else {
+      puzzle = getRandomPuzzle();
+    }
+    
+    setCurrentPuzzle(puzzle);
+    const newGame = new Chess(puzzle.fen);
+    setGame(newGame);
+    setMode('puzzle');
+    setGameStarted(true);
+    setSolutionIndex(0);
+    setPuzzleSolved(false);
+    setMoveHistory([]);
+    setPlayerColor(newGame.turn() === 'w' ? 'white' : 'black');
+    setStatus(`Rating: ${puzzle.rating} - Find the best move!`);
+    setGameOverMessage(null);
+  };
 
   const nextPuzzle = () => {
-    setPuzzleIndex((puzzleIndex + 1) % PUZZLES.length);
-    startPuzzle();
+    startPuzzle(difficulty);
   };
 
   const resetGame = () => {
@@ -296,11 +255,24 @@ const startPuzzle = (difficulty = 'random') => {
         setStatus('Puzzle solved! 🎉');
         setGameOverMessage({
           title: 'Puzzle Solved!',
-          message: 'Great job! Try the next one.',
+          message: `Rating: ${currentPuzzle.rating} - Great job!`,
           type: 'win'
         });
       } else {
         setStatus('Correct! Continue...');
+        // Auto-make opponent's response if there are more moves
+        if (solutionIndex + 1 < currentPuzzle.solution.length) {
+          setTimeout(() => {
+            const nextMove = currentPuzzle.solution[solutionIndex + 1];
+            const from = nextMove.substring(0, 2);
+            const to = nextMove.substring(2, 4);
+            const newGame = new Chess(game.fen());
+            newGame.move({ from, to, promotion: 'q' });
+            setGame(newGame);
+            setSolutionIndex(solutionIndex + 2);
+            setStatus('Your turn - find the next move!');
+          }, 500);
+        }
       }
     } else {
       setStatus('❌ Wrong move! Try again.');
@@ -418,7 +390,7 @@ const startPuzzle = (difficulty = 'random') => {
               <p>Practice against AI opponents</p>
             </div>
 
-            <div className="mode-card" onClick={startPuzzle}>
+            <div className="mode-card" onClick={() => setMode('puzzle-select')}>
               <div className="mode-icon"><FaPuzzlePiece /></div>
               <h3>Solve Puzzles</h3>
               <p>Improve your tactical skills</p>
@@ -473,6 +445,41 @@ const startPuzzle = (difficulty = 'random') => {
               </div>
             </div>
           )}
+
+          {mode === 'puzzle-select' && (
+            <div className="difficulty-selection">
+              <h2>Choose Puzzle Difficulty</h2>
+              <div className="difficulty-cards">
+                <div className="difficulty-card easy" onClick={() => { setDifficulty('easy'); startPuzzle('easy'); }}>
+                  <div className="difficulty-icon">⭐</div>
+                  <h3>Easy</h3>
+                  <p>Rating: 600-1200</p>
+                  <button className="color-btn white">Start Easy Puzzles</button>
+                </div>
+
+                <div className="difficulty-card medium" onClick={() => { setDifficulty('medium'); startPuzzle('medium'); }}>
+                  <div className="difficulty-icon">⭐⭐</div>
+                  <h3>Medium</h3>
+                  <p>Rating: 1200-1800</p>
+                  <button className="color-btn white">Start Medium Puzzles</button>
+                </div>
+
+                <div className="difficulty-card hard" onClick={() => { setDifficulty('hard'); startPuzzle('hard'); }}>
+                  <div className="difficulty-icon">⭐⭐⭐</div>
+                  <h3>Hard</h3>
+                  <p>Rating: 1800+</p>
+                  <button className="color-btn white">Start Hard Puzzles</button>
+                </div>
+
+                <div className="difficulty-card" style={{borderColor: 'var(--accent)'}} onClick={() => { setDifficulty('random'); startPuzzle('random'); }}>
+                  <div className="difficulty-icon"><FaRandom /></div>
+                  <h3>Random</h3>
+                  <p>All difficulties mixed</p>
+                  <button className="color-btn white">Start Random Puzzles</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="practice-game">
@@ -493,9 +500,10 @@ const startPuzzle = (difficulty = 'random') => {
             {mode === 'puzzle' && currentPuzzle && (
               <div className="puzzle-info-card">
                 <div className="puzzle-icon"><FaPuzzlePiece /></div>
-                <h3>Puzzle #{puzzleIndex + 1}</h3>
-                <p className="puzzle-difficulty">{currentPuzzle.difficulty.toUpperCase()}</p>
-                <p className="puzzle-desc">{currentPuzzle.description}</p>
+                <h3>Chess Puzzle</h3>
+                <p className="puzzle-difficulty">Rating: {currentPuzzle.rating}</p>
+                <p className="puzzle-desc">{currentPuzzle.themes?.join(', ') || 'Tactical puzzle'}</p>
+                <p className="puzzle-moves">Moves to find: {currentPuzzle.solution.length}</p>
               </div>
             )}
 
@@ -515,8 +523,13 @@ const startPuzzle = (difficulty = 'random') => {
                   <FaLightbulb /> Show Hint
                 </button>
               )}
+              {mode === 'puzzle' && (
+                <button onClick={nextPuzzle} className="control-btn new-game">
+                  <FaArrowRight /> Next Puzzle
+                </button>
+              )}
               <button onClick={resetGame} className="control-btn new-game">
-                <FaTrophy /> New Game
+                <FaTrophy /> Main Menu
               </button>
             </div>
 
