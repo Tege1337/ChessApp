@@ -7,7 +7,7 @@ import GameBoard from './Components/gameboard';
 import Profile from './Components/profile';
 import Settings from './Components/settings';
 import Practice from './Components/practice';
-import Friends from '.Components/friends';
+import Friends from '../Components/friends';
 import './App.css';
 
 function PrivateRoute({ children }) {
