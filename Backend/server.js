@@ -28,6 +28,9 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
+// Set strictQuery to true to suppress deprecation warning
+mongoose.set('strictQuery', true);
+
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Connected to MongoDB'))
