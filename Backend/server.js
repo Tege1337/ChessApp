@@ -115,11 +115,20 @@ io.on('connection', (socket) => {
     try {
       const result = chess.move(move);
       if (result) {
-        moves.push({ ...move, timestamp: new Date() });
+        const moveData = {
+          ...move,
+          piece: result.piece,
+          color: result.color,
+          flags: result.flags,
+          san: result.san,
+          timestamp: new Date()
+        };
+        moves.push(moveData);
 
         io.to(gameId).emit('moveMade', {
-          move: result,
+          move: moveData,
           fen: chess.fen(),
+          lastMove: { from: move.from, to: move.to },
           isCheck: chess.isCheck(),
           isCheckmate: chess.isCheckmate(),
           isGameOver: chess.isGameOver()
@@ -132,6 +141,20 @@ io.on('connection', (socket) => {
     } catch (error) {
       console.error('Invalid move');
     }
+  });
+
+  // Handle chat messages
+  socket.on('sendChatMessage', ({ gameId, message }) => {
+    const gameData = games.get(gameId);
+    if (!gameData || !gameData.players.includes(socket.userId)) return;
+
+    const chatMessage = {
+      username: socket.username,
+      message: message,
+      timestamp: new Date()
+    };
+
+    io.to(gameId).emit('chatMessage', chatMessage);
   });
 
   socket.on('disconnect', () => {

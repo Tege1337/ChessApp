@@ -22,6 +22,7 @@ function GameBoard() {
   const [legalMoves, setLegalMoves] = useState([]);
   const [gameOverMessage, setGameOverMessage] = useState(null);
   const [premove, setPremove] = useState(null);
+  const [customSquareStyles, setCustomSquareStyles] = useState({});
   const socketRef = useRef(null);
 
   const boardStyle = user?.settings?.boardStyle || 'classic';
@@ -75,11 +76,28 @@ function GameBoard() {
       setLegalMoves([]);
     });
 
-    newSocket.on('moveMade', ({ fen, isCheck, isCheckmate, isGameOver }) => {
+    newSocket.on('moveMade', ({ fen, move, lastMove, isCheck, isCheckmate, isGameOver }) => {
       const newGame = new Chess(fen);
       setGame(newGame);
       setSelectedSquare(null);
       setLegalMoves([]);
+      
+      // Highlight the last move
+      if (lastMove) {
+        const moveStyles = {
+          [lastMove.from]: { backgroundColor: 'rgba(255, 255, 0, 0.3)' },
+          [lastMove.to]: { backgroundColor: 'rgba(255, 255, 0, 0.3)' }
+        };
+        setCustomSquareStyles(prev => ({ ...prev, ...moveStyles }));
+        setTimeout(() => {
+          setCustomSquareStyles(prev => {
+            const newStyles = { ...prev };
+            delete newStyles[lastMove.from];
+            delete newStyles[lastMove.to];
+            return newStyles;
+          });
+        }, 1000);
+      }
       
       // Check if it's now our turn and we have a premove
       const myColor = playerColor === 'white' ? 'w' : 'b';
@@ -259,26 +277,33 @@ function GameBoard() {
     return false;
   };
 
-  const customSquareStyles = {};
-  if (selectedSquare) {
-    customSquareStyles[selectedSquare] = { backgroundColor: 'rgba(255, 255, 0, 0.4)' };
-  }
-  if (premove) {
-    customSquareStyles[premove.from] = { 
-      backgroundColor: 'rgba(239, 68, 68, 0.5)',
-      boxShadow: 'inset 0 0 0 3px rgba(239, 68, 68, 0.8)'
-    };
-    customSquareStyles[premove.to] = { 
-      backgroundColor: 'rgba(239, 68, 68, 0.7)',
-      boxShadow: 'inset 0 0 0 3px rgba(239, 68, 68, 0.8)'
-    };
-  }
-  legalMoves.forEach(square => {
-    customSquareStyles[square] = { 
-      background: 'radial-gradient(circle, rgba(20, 184, 166, 0.5) 25%, transparent 25%)',
-      borderRadius: '50%'
-    };
-  });
+  useEffect(() => {
+    const newStyles = {};
+    
+    if (selectedSquare) {
+      newStyles[selectedSquare] = { backgroundColor: 'rgba(255, 255, 0, 0.4)' };
+    }
+    
+    if (premove) {
+      newStyles[premove.from] = { 
+        backgroundColor: 'rgba(239, 68, 68, 0.5)',
+        boxShadow: 'inset 0 0 0 3px rgba(239, 68, 68, 0.8)'
+      };
+      newStyles[premove.to] = { 
+        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+        boxShadow: 'inset 0 0 0 3px rgba(239, 68, 68, 0.8)'
+      };
+    }
+    
+    legalMoves.forEach(square => {
+      newStyles[square] = { 
+        background: 'radial-gradient(circle, rgba(20, 184, 166, 0.5) 25%, transparent 25%)',
+        borderRadius: '50%'
+      };
+    });
+    
+    setCustomSquareStyles(newStyles);
+  }, [selectedSquare, premove, legalMoves]);
 
   const currentBoardStyle = boardStyles[boardStyle];
 
