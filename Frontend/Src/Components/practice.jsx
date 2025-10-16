@@ -257,15 +257,26 @@ function Practice() {
 
   const resetGame = () => {
     setGame(new Chess());
-    setGameStarted(false);
     setMode(null);
-    setDifficulty(null);
-    setSelectedSquare(null);
-    setLegalMoves([]);
-    setStatus('Choose a mode');
-    setGameOverMessage(null);
-    setCurrentPuzzle(null);
+    setBotLevel(null);
+    setPlayerColor('white');
+    setThinking(false);
+    setPuzzle(null);
     setPuzzleSolved(false);
+    setHintShown(false);
+    
+    // Clear saved game
+    localStorage.removeItem('savedPracticeGame');
+    localStorage.removeItem('practiceSettings');
+  };
+
+  const resumeSavedGame = () => {
+    if (savedGame && savedSettings) {
+      setGame(new Chess(savedGame));
+      setMode(savedSettings.mode);
+      setBotLevel(savedSettings.botLevel);
+      setPlayerColor(savedSettings.playerColor);
+    }
   };
 
   const undoMove = () => {

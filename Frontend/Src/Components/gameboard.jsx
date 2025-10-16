@@ -179,16 +179,49 @@ function GameBoard() {
     };
   }, [token, gameId, playerColor, premove]);
 
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
+  const [isReconnecting, setIsReconnecting] = useState(false);
+  const reconnectTimeout = useRef(null);
+  
+  const attemptReconnect = () => {
+    if (connectionAttempts >= 3) {
+      setStatus('Connection failed. Please refresh the page.');
+      return;
+    }
+
+    setIsReconnecting(true);
+    setStatus('Reconnecting to server...');
+    
+    const newSocket = io(API_URL, { 
+      auth: { token },
+      reconnectionAttempts: 3,
+      reconnectionDelay: 1000,
+      timeout: 10000
+    });
+
+    newSocket.on('connect', () => {
+      setSocket(newSocket);
+      setIsReconnecting(false);
+      setConnectionAttempts(0);
+      setStatus('Connected! Ready to play.');
+    });
+
+    newSocket.on('connect_error', () => {
+      setConnectionAttempts(prev => prev + 1);
+      if (connectionAttempts < 3) {
+        reconnectTimeout.current = setTimeout(attemptReconnect, 2000);
+      }
+    });
+  };
+
   const findGame = () => {
     if (socket && socket.connected) {
       socket.emit('joinGame');
       setIsWaiting(true);
       setStatus('Joining matchmaking queue...');
     } else {
-      setStatus('Not connected to server. Please refresh.');
-      // Attempt to reconnect
-      const newSocket = io(API_URL, { auth: { token } });
-      setSocket(newSocket);
+      setStatus('Connecting to server...');
+      attemptReconnect();
     }
   };
 

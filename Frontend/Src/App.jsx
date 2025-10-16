@@ -14,10 +14,15 @@ function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   
   if (loading) {
-    return <div className="loading-screen">Loading...</div>;
+    return (
+      <div className="loading-screen">
+        <div className="loading-spinner"></div>
+        <p>Loading your profile...</p>
+      </div>
+    );
   }
   
-  return user ? children : <Navigate to="/login" />;
+  return user ? children : <Navigate to="/login" replace />;
 }
 
 function AppContent() {

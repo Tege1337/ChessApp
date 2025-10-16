@@ -11,8 +11,29 @@ function GameChat({ socket, gameId, playerUsername, opponentUsername }) {
   const [inputMessage, setInputMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
+  const isWindowFocused = useRef(document.hasFocus());
+  
+  // Track window focus
+  useEffect(() => {
+    const handleFocus = () => {
+      isWindowFocused.current = true;
+      setUnreadCount(0);
+    };
+    const handleBlur = () => {
+      isWindowFocused.current = false;
+    };
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, []);
 
   const lastMessageTime = useRef(0);
 
