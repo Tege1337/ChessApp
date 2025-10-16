@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../Context/AuthContext';
 import { FaCog, FaPalette, FaVolumeUp, FaChessBoard } from 'react-icons/fa';
 
@@ -10,6 +10,11 @@ function Settings() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Apply theme on mount and when changed
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
   const handleSave = async () => {
     setSaving(true);
     setSaved(false);
@@ -18,7 +23,7 @@ function Settings() {
       await updateSettings({ theme, soundEffects, boardStyle });
       setSaved(true);
       
-      // Apply theme to document
+      // Apply theme immediately
       document.documentElement.setAttribute('data-theme', theme);
       
       setTimeout(() => setSaved(false), 3000);
@@ -27,6 +32,11 @@ function Settings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleThemeChange = (newTheme) => {
+    setTheme(newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
   };
 
   return (
@@ -49,7 +59,7 @@ function Settings() {
                 name="theme"
                 value="light"
                 checked={theme === 'light'}
-                onChange={(e) => setTheme(e.target.value)}
+                onChange={(e) => handleThemeChange(e.target.value)}
               />
               <span>Light</span>
             </label>
@@ -59,7 +69,7 @@ function Settings() {
                 name="theme"
                 value="dark"
                 checked={theme === 'dark'}
-                onChange={(e) => setTheme(e.target.value)}
+                onChange={(e) => handleThemeChange(e.target.value)}
               />
               <span>Dark</span>
             </label>
@@ -100,7 +110,7 @@ function Settings() {
                 checked={boardStyle === 'classic'}
                 onChange={(e) => setBoardStyle(e.target.value)}
               />
-              <span>Classic</span>
+              <span>Classic (Gray)</span>
             </label>
             <label className="radio-option">
               <input
@@ -110,7 +120,7 @@ function Settings() {
                 checked={boardStyle === 'modern'}
                 onChange={(e) => setBoardStyle(e.target.value)}
               />
-              <span>Modern</span>
+              <span>Modern (Blue)</span>
             </label>
             <label className="radio-option">
               <input
@@ -120,7 +130,7 @@ function Settings() {
                 checked={boardStyle === 'wood'}
                 onChange={(e) => setBoardStyle(e.target.value)}
               />
-              <span>Wood</span>
+              <span>Wood (Brown)</span>
             </label>
           </div>
         </div>

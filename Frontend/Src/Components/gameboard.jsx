@@ -22,6 +22,24 @@ function GameBoard() {
   const [gameOverMessage, setGameOverMessage] = useState(null);
   const [premove, setPremove] = useState(null);
 
+  const boardStyle = user?.settings?.boardStyle || 'classic';
+
+  // Board color schemes
+  const boardStyles = {
+    classic: {
+      light: '#d1d5db',
+      dark: '#4b5563'
+    },
+    modern: {
+      light: '#e0e7ff',
+      dark: '#4f46e5'
+    },
+    wood: {
+      light: '#f0d9b5',
+      dark: '#b58863'
+    }
+  };
+
   // Animated dots for waiting state
   useEffect(() => {
     if (isWaiting) {
@@ -158,40 +176,7 @@ function GameBoard() {
 
     const gameCopy = new Chess(game.fen());
     
-    // If it's not our turn, set premove
-    if (!isMyTurn()) {
-      if (selectedSquare) {
-        // Check if this would be a valid move when it's our turn
-        const testGame = new Chess(game.fen());
-        // Simulate opponent's move by flipping turn (not perfect but works for premove UI)
-        const pieceOnSelected = testGame.get(selectedSquare);
-        const myColor = playerColor === 'white' ? 'w' : 'b';
-        
-        if (pieceOnSelected && pieceOnSelected.color === myColor) {
-          setPremove({ from: selectedSquare, to: square });
-          setSelectedSquare(null);
-          setLegalMoves([]);
-          setStatus('Premove set! ⏱️');
-        } else {
-          setSelectedSquare(null);
-          setLegalMoves([]);
-          setPremove(null);
-        }
-      } else {
-        // Select piece for premove
-        const piece = gameCopy.get(square);
-        const myColor = playerColor === 'white' ? 'w' : 'b';
-        if (piece && piece.color === myColor) {
-          setSelectedSquare(square);
-          // Show potential moves (they might not be legal yet)
-          const moves = gameCopy.moves({ square, verbose: true });
-          setLegalMoves(moves.map(m => m.to));
-        }
-      }
-      return;
-    }
-
-    // Normal move logic when it's our turn
+    // If clicking on empty square or opponent piece while piece is selected, try to move
     if (selectedSquare) {
       const move = gameCopy.move({
         from: selectedSquare,
@@ -199,7 +184,8 @@ function GameBoard() {
         promotion: 'q'
       });
 
-      if (move) {
+      if (move && isMyTurn()) {
+        // Valid move
         setGame(gameCopy);
         socket.emit('makeMove', {
           gameId,
@@ -209,21 +195,27 @@ function GameBoard() {
         setLegalMoves([]);
         setPremove(null);
       } else {
+        // Invalid move or not our turn - check if clicking on own piece
         const piece = gameCopy.get(square);
         const turn = gameCopy.turn();
+        
         if (piece && ((turn === 'w' && piece.color === 'w') || (turn === 'b' && piece.color === 'b'))) {
+          // Clicking on another own piece - select it
           setSelectedSquare(square);
           const moves = gameCopy.moves({ square, verbose: true });
           setLegalMoves(moves.map(m => m.to));
         } else {
+          // Clicking elsewhere - deselect
           setSelectedSquare(null);
           setLegalMoves([]);
         }
       }
     } else {
+      // No piece selected - select piece if it's ours
       const piece = gameCopy.get(square);
       const turn = gameCopy.turn();
-      if (piece && ((turn === 'w' && piece.color === 'w') || (turn === 'b' && piece.color === 'b'))) {
+      
+      if (isMyTurn() && piece && ((turn === 'w' && piece.color === 'w') || (turn === 'b' && piece.color === 'b'))) {
         setSelectedSquare(square);
         const moves = gameCopy.moves({ square, verbose: true });
         setLegalMoves(moves.map(m => m.to));
@@ -281,6 +273,8 @@ function GameBoard() {
       borderRadius: '50%'
     };
   });
+
+  const currentBoardStyle = boardStyles[boardStyle];
 
   return (
     <div className="game-container">
@@ -373,8 +367,8 @@ function GameBoard() {
             borderRadius: '8px',
             boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
           }}
-          customDarkSquareStyle={{ backgroundColor: '#4b5563' }}
-          customLightSquareStyle={{ backgroundColor: '#d1d5db' }}
+          customDarkSquareStyle={{ backgroundColor: currentBoardStyle.dark }}
+          customLightSquareStyle={{ backgroundColor: currentBoardStyle.light }}
         />
       </div>
     </div>
